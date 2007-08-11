@@ -1,0 +1,115 @@
+%\VignetteIndexEntry{CGHcall}
+%\VignetteDepends{}
+%\VignetteKeywords{Calling aberrations for array CGH tumor profiles.}
+%\VignettePackage{CGHcall}
+
+\documentclass[11pt]{article}
+
+\usepackage{amsmath}
+\usepackage[authoryear,round]{natbib}
+\usepackage{hyperref}
+\SweaveOpts{echo=FALSE}
+
+\begin{document}
+
+\setkeys{Gin}{width=0.99\textwidth}
+
+\title{\bf CGHcall: Calling aberrations for array CGH tumor profiles.}
+
+\author{Sjoerd Vosse and Mark van de Wiel}
+
+\maketitle
+
+\begin{center}
+Department of Pathology\\
+VU University Medical Center
+\end{center}
+
+\begin{center}
+
+{\tt mark.vdwiel@vumc.nl}
+\end{center}
+
+
+\tableofcontents
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Overview}
+
+CGHcall allows users to make an objective and effective classification of their aCGH data into copy number states (loss, normal, gain or amplification). This document provides an overview on the usage of the CGHcall package. For more detailed information on the algorithm and assumptions we refer to the article \citep{CGHcall} and its supplementary material. As example data we attached the first five samples of the Wilting dataset \citep{Wilting}. After filtering and selecting only the autosomes 4709 datapoints remained.
+
+\section{Example}
+
+In this section we will use CGHcall to call and visualize the aberrations in the dataset described above. First, we load the package and the data:
+
+<<echo=TRUE,print=FALSE>>=
+library(CGHcall)
+data(Wilting)
+@
+
+\noindent
+Next, we apply the {\tt preprocess} function which:
+\begin{itemize}
+\item removes data with unknown or invalid position information.
+\item shrinks the data to {\tt nchrom} chromosomes.
+\item removes data with more than {\tt maxmiss} \% missing values.
+\item imputes missing values using {\tt impute.knn} from the package {\tt impute} \citep{Impute}.
+\end{itemize}
+
+<<echo=TRUE,print=FALSE>>=
+cghdata <- preprocess(Wilting, "dataframe", maxmiss=30, nchrom=22)
+@
+
+To be able to compare profiles they need to be normalized. In this package we provide very basic global median or mode normalization. Of course, other methods can be used outside this package. This function also contains smoothing of outliers as implemented in the DNAcopy package \citep{DNAcopy}. Furthermore, when the proportion of tumor cells is not 100\% the ratios can be corrected. See the article and the supplementary material for more information on cellularity correction \citep{CGHcall}.
+
+<<echo=TRUE,print=FALSE>>=
+tumor.prop <- c(0.75, 0.9, 0.8, 1, 1)
+norm.cghdata <- normalize(cghdata, type="dataframe", method="median", cellularity=tumor.prop, smoothOutliers=TRUE)
+@
+
+The next step is segmentation of the data. This package only provides a simple wrapper function that applies the {\tt DNAcopy} algorithm \citep{DNAcopy}. Again, other segmentation algorithms may be used. To save time we will limit our analysis to the first two samples from here on.
+
+<<echo=TRUE,print=FALSE>>=
+norm.cghdata <- norm.cghdata[,1:5]
+seg.cghdata <- segmentData(norm.cghdata, type="dataframe", method="DNAcopy")
+@
+
+Now that the data have been normalized and segments have been defined, we need to determine which segments should be classified as losses, normal, gains or amplifications.
+
+<<echo=TRUE,print=FALSE>>=
+result <- CGHcall(norm.cghdata, seg.cghdata)
+@
+
+\pagebreak
+\noindent
+To visualize the results per profile we use the {\tt plotProfile} function:
+
+\begin{center}
+<<fig=TRUE,echo=TRUE>>=
+plotProfile(result, samples=1, export="no")
+@
+\end{center}
+
+\pagebreak
+\begin{center}
+<<fig=TRUE,echo=TRUE>>=
+plotProfile(result, samples=2, export="no")
+@
+\end{center}
+
+\pagebreak
+\noindent
+Alternatively, we can create a summary plot of all the samples:
+
+\begin{center}
+<<fig=TRUE,echo=TRUE>>=
+plotSummary(result, samples="all", export="no")
+@
+\end{center}
+
+\pagebreak
+%\newpage
+\bibliographystyle{apalike}
+\bibliography{CGHcall}
+
+\end{document}

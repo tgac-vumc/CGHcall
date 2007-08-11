@@ -1,0 +1,49 @@
+\name{CGHcall}
+\alias{CGHcall}
+\title{ Calling aberrations for array CGH tumor profiles. }
+\description{
+  Calls aberrations for array CGH data using a six state mixture model.
+}
+\usage{
+CGHcall(inputNormalized, inputSegmented, typeNormalized = "dataframe", typeSegmented = "dataframe", prior = "auto", nclass = 3, organism = "human")
+}
+\arguments{
+  \item{inputNormalized}{ Either the name of a file or a dataframe with normalized data. See \code{\link[DNAcopy]{normalize}} for the format. }
+  \item{inputSegmented}{ Either the name of a file or a dataframe with segmented data. See \code{\link[DNAcopy]{segment}} for the format. }
+  \item{typeNormalized}{ What kind of data format is used for the normalized data input? Either \code{dataframe} or \code{file}. }
+  \item{typeSegmented}{ What kind of data format is used for the segmented data input? Either \code{dataframe} or \code{file}. }
+  \item{prior}{ Options are \code{all}, \code{not all}, or \code{auto}. See details for more information. }
+  \item{nclass}{ The number of levels to be used for calling. Either \code{3} (loss, normal, gain) or \code{4} (including amplifications). }
+  \item{organism}{ Either \code{human} or \code{other}. This is only used for chromosome arm information when \code{prior} is set to \code{all} or \code{auto} (and samplesize > 20). }
+}
+\details{
+	Please read the article and the supplementary information for detailed information on the algorithm. 
+	
+	The parameter \code{prior} states how the data is used to determine the prior probabilities. When set to \code{all}, the probabilities are determined using the entire genome of each sample. When set to \code{not all} probabilites are determined per chromosome for each sample when \code{organism} is set to \code{other} or per chromosome arm when \code{organism} is \code{human}. The chromosome arm information is taken from the March 2006 version of the UCSC database. When \code{prior} is set to \code{auto}, the way probabilities are determined depends on the sample size. The entire genome is used when the sample size is smaller than 20, otherwise chromosome (arm) information is used.
+	
+	Please note that CGHcall uses information from all input data to determine the aberration probabilities. When for example triploid or tetraploid tumors are observed, we advise to run CGHcall separately on those (groups of) samples.  
+}
+\value{
+ 	This function return a list with three components:
+  \item{probabilities }{A dataframe with 3 columns of probe information (name, chromosome and position), followed by k columns with aberration probabilities for each sample, where k is the number of levels used for calling (\code{nclass}).}
+  \item{calls }{A dataframe with the calls for each sample. Values are \code{-1} (loss), \code{0} (normal) or \code{1} (gain). If 4 levels were used for calling, a value of \code{2} represents an amplification.}
+  \item{segments }{A matrix with the segments for each profile. The first column contains the sample number. The second column the level of the current segment and the third and fourth columns the start and end of the segment in probe number respectively.}
+}
+\references{
+  Mark A. van de Wiel, Kyung In Kim, Sjoerd J. Vosse, Wessel N. van Wieringen, Saskia M. Wilting and Bauke Ylstra. CGHcall: calling aberrations for array CGH tumor profiles. \emph{Bioinformatics, 23}, 892-894.
+}
+\author{ Sjoerd Vosse & Mark van de Wiel }
+\examples{
+  data(Wilting)
+  ## First preprocess the data
+  raw.data <- preprocess(Wilting, type="dataframe")
+  ## Simple global median normalization for samples with 75\% tumor cells
+  perc.tumor <- rep(0.75, 3)
+  normalized.data <- normalize(raw.data, cellularity=perc.tumor)
+  ## Segmentation with slightly relaxed significance level to accept change-points.
+  ## Note that segmentation can take a long time.
+  \dontrun{segmented.data <- segmentData(normalized.data, alpha=0.02)}
+  ## Call aberrations
+  \dontrun{result <- CGHcall(normalized.data, segmented.data)}
+}
+\keyword{ misc }
