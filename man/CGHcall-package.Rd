@@ -5,7 +5,7 @@
 	Calling aberrations for array CGH tumor profiles.
 }
 \description{
-	Calls aberrations for array CGH data using a six state mixture model.
+	Calls aberrations for array CGH data using a six state mixture model as well as several biological concepts that are ignored by existing algorithms. Visualization of profiles is also provided.
 }
 \details{
 	\tabular{ll}{
