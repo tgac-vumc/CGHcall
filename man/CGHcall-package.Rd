@@ -5,19 +5,19 @@
 	Calling aberrations for array CGH tumor profiles.
 }
 \description{
-	
+	Calls aberrations for array CGH data using a six state mixture model.
 }
 \details{
 	\tabular{ll}{
 	Package: \tab CGHcall\cr
 	Type: \tab Package\cr
-	Version: \tab 1.0\cr
-	Date: \tab 2007-06-26\cr
+	Version: \tab 1.1.0\cr
+	Date: \tab 2007-11-08\cr
 	License: \tab GPL\cr
 	}
 }
 \author{
-Sjoerd Vosse & Mark van de Wiel
+Sjoerd Vosse and Mark van de Wiel
 
 Maintainer: Sjoerd Vosse <s.vosse@vumc.nl>
 }
