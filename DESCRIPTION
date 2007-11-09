@@ -1,7 +1,7 @@
 Package:	CGHcall
 Type:		Package
 Title:		Calling aberrations for array CGH tumor profiles.
-Version:	1.1.1
+Version:	1.1.2
 Date:		2007-11-08
 Author:		Sjoerd Vosse and Mark van de Wiel
 Maintainer:	Sjoerd Vosse <s.vosse@vumc.nl>
