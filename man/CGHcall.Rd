@@ -5,13 +5,10 @@
   Calls aberrations for array CGH data using a six state mixture model.
 }
 \usage{
-CGHcall(inputNormalized, inputSegmented, typeNormalized = "dataframe", typeSegmented = "dataframe", prior = "auto", nclass = 3, organism = "human")
+CGHcall(inputSegmented, prior = "auto", nclass = 3, organism = "human")
 }
 \arguments{
-  \item{inputNormalized}{ Either the name of a file or a dataframe with normalized data. See \code{\link[DNAcopy]{normalize}} for the format. }
-  \item{inputSegmented}{ Either the name of a file or a dataframe with segmented data. See \code{\link[DNAcopy]{segment}} for the format. }
-  \item{typeNormalized}{ What kind of data format is used for the normalized data input? Either \code{dataframe} or \code{file}. }
-  \item{typeSegmented}{ What kind of data format is used for the segmented data input? Either \code{dataframe} or \code{file}. }
+  \item{inputSegmented}{ An object of class \code{\link{cghSeg}} }
   \item{prior}{ Options are \code{all}, \code{not all}, or \code{auto}. See details for more information. }
   \item{nclass}{ The number of levels to be used for calling. Either \code{3} (loss, normal, gain) or \code{4} (including amplifications). }
   \item{organism}{ Either \code{human} or \code{other}. This is only used for chromosome arm information when \code{prior} is set to \code{all} or \code{auto} (and samplesize > 20). }
@@ -35,15 +32,18 @@ CGHcall(inputNormalized, inputSegmented, typeNormalized = "dataframe", typeSegme
 \author{ Sjoerd Vosse & Mark van de Wiel }
 \examples{
   data(Wilting)
+  ## Convert to \code{\link{cghRaw}} object
+  cgh <- make_cghRaw(Wilting)
+  print(cgh)
   ## First preprocess the data
-  raw.data <- preprocess(Wilting, type="dataframe")
+  raw.data <- preprocess(cgh)
   ## Simple global median normalization for samples with 75\% tumor cells
   perc.tumor <- rep(0.75, 3)
-  normalized.data <- normalize(raw.data, cellularity=perc.tumor)
+  normalized.data <- normalize(raw.data, cellularity=perc.tumor)  
   ## Segmentation with slightly relaxed significance level to accept change-points.
   ## Note that segmentation can take a long time.
   \dontrun{segmented.data <- segmentData(normalized.data, alpha=0.02)}
   ## Call aberrations
-  \dontrun{result <- CGHcall(normalized.data, segmented.data)}
+  \dontrun{result <- CGHcall(segmented.data)}
 }
 \keyword{ misc }

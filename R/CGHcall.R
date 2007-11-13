@@ -1,11 +1,20 @@
-CGHcall <- function(inputNormalized, inputSegmented, typeNormalized="dataframe", typeSegmented="dataframe", prior="auto", nclass=3, organism="human") {
+CGHcall <- function(inputSegmented, prior="auto", nclass=3, organism="human") {
+
+    ## Version 2.0
+    ## Author: Mark van de Wiel
+    ## Maintainer: Sjoerd Vosse
+    ## Email: s.vosse@vumc.nl
+    ## Date: 24-10-2007
+    
+    ## Changes since previous version
+    ## - input is of class cgh
 
     timeStarted <- proc.time()
 
     ## Read input data
-    normalizedData  <- CGHcall:::.readInput(inputNormalized, typeNormalized)
-    segmentedData   <- CGHcall:::.readInput(inputSegmented, typeSegmented)
-    combined        <- cbind(normalizedData, segmentedData[,4:ncol(segmentedData)])
+    normalizedData  <- copynumber(inputSegmented)
+    segmentedData   <- segmented(inputSegmented)
+    combined        <- data.frame(featureNames(inputSegmented), chromosomes(inputSegmented), bpstart(inputSegmented), normalizedData, segmentedData)
     
     datareg     <- CGHcall:::.MakeData(combined)
     posit       <- datareg[[1]][,3]
@@ -149,8 +158,8 @@ CGHcall <- function(inputNormalized, inputSegmented, typeNormalized="dataframe",
     }
     
     ### Add column names
-    info        <- colnames(normalizedData)[1:3]
-    samplenames <- colnames(normalizedData)[4:ncol(normalizedData)]
+    info        <- c("Name", "Chromosome", "Position")
+    samplenames <- sampleNames(inputSegmented)
     col.names   <- rep(samplenames, each=nclass+1)
     
     paste.stuff <- c("log2ratio", "loss", "normal", "gain")
@@ -164,7 +173,7 @@ CGHcall <- function(inputNormalized, inputSegmented, typeNormalized="dataframe",
     ### Define calls from probabilities
     ncpp        <- nclass+1
     nclone      <- nrow(dataprob)
-    ncolscl     <- ncol(normalizedData) - 3
+    ncolscl     <- ncol(normalizedData)
     classify.res        <- array(NA,c(nclone,ncolscl))
     for (i in 1:nc) {
         genomdat        <- dataprob[,(3+ncpp*(i-1)+1)]
@@ -186,19 +195,52 @@ CGHcall <- function(inputNormalized, inputSegmented, typeNormalized="dataframe",
             classify.res[(1:nclone),i] <- (as.numeric(prob.amp.ind>0.5)+1)*(2*(as.numeric(prob.gain.amp>prob.loss.ind))-1)*(as.numeric(apply(cbind(prob.loss.ind,prob.gain.ind),1,max)>prob.none.ind))
         }              
     }
-    classify.res <- data.frame(dataprob[,1:3],classify.res)
-    colnames(classify.res) <- colnames(normalizedData)
     
     ### Make result list
+    
+    splitProbs <- function(probs, nsample=nc, classes=nclass) {
+        probs   <- probs[,4:ncol(probs)]
+        count   <- classes+1
+        probloss <- c()
+        probnorm <- c()
+        probgain <- c()
+        probamp <- c()
+        for (i in 0:(nsample-1)) {
+            probloss <- cbind(probloss, probs[,i*count+2])
+            probnorm <- cbind(probnorm, probs[,i*count+3])
+            probgain <- cbind(probgain, probs[,i*count+4])
+            if (nclass==4) probamp <- cbind(probs[,i*count+4])
+        }
+        if (nclass == 3) result  <- list(loss=probloss, normal=probnorm, gain=probgain)
+        else if (nclass == 4) result  <- list(loss=probloss, normal=probnorm, gain=probgain, amp=probamp)
+        result
+    }
+    
     allmeanold  <- allsumold/allnc  #include amplifications
     profmeannc  <- cbind(profile, allmeanold, regions)
     
-    classes     <- c("loss", "normal", "gain")
-    if (nclass == 4) classes <- c(classes, "amplification")
-    result      <- list(probabilities=dataprob, calls=classify.res, segments=profmeannc)
+    probs       <- splitProbs(dataprob)
+    
+    if (nclass == 3) assayData <- assayDataNew( copynumber  = copynumber(inputSegmented),
+                                                segmented   = segmented(inputSegmented),
+                                                calls       = CGHcall:::.assignNames(classify.res, inputSegmented), 
+                                                probloss    = CGHcall:::.assignNames(probs$loss, inputSegmented), 
+                                                probnorm    = CGHcall:::.assignNames(probs$normal, inputSegmented), 
+                                                probgain    = CGHcall:::.assignNames(probs$gain, inputSegmented)
+                                                )
+    else if (nclass == 4) assayData <- assayDataNew(copynumber  = copynumber(inputSegmented),
+                                                    segmented   = segmented(inputSegmented),
+                                                    calls       = CGHcall:::.assignNames(classify.res, inputSegmented), 
+                                                    probloss    = CGHcall:::.assignNames(probs$loss, inputSegmented), 
+                                                    probnorm    = CGHcall:::.assignNames(probs$normal, inputSegmented), 
+                                                    probgain    = CGHcall:::.assignNames(probs$gain, inputSegmented),
+                                                    probamp     = CGHcall:::.assignNames(probs$amp, inputSegmented)
+                                                    )
+                                                            
+    result  <- CGHcall:::.callFromSeg(inputSegmented, assayData)                                                            
     
     cat("FINISHED!\n")
     timeFinished <- round((proc.time() - timeStarted)[1] / 60)
     cat("Total time:", timeFinished, "minutes\n")
-    return(result)
+    result
 }

@@ -1,10 +1,69 @@
-.readInput <- function(input, type) {
-    if (type == "file") {
-        result  <- read.table(input, header=T, sep="\t", fill=T, quote="");
-    } else if (type == "dataframe"){
-        result  <- input;
+.segFromRaw <- function(raw, segmatrix) {
+    result <- new("cghSeg", copynumber=copynumber(raw), 
+                            segmented=segmatrix, 
+                            phenoData=phenoData(raw), 
+                            featureData=featureData(raw), 
+                            annotation=annotation(raw), 
+                            experimentData=experimentData(raw)
+                            )
+    result
+}
+
+.callFromSeg <- function(seg, assayData) {
+    result <- new("cghCall", assayData=assayData,
+                            phenoData=phenoData(seg), 
+                            featureData=featureData(seg), 
+                            annotation=annotation(seg), 
+                            experimentData=experimentData(seg)
+                            )
+    result
+}
+
+.makeSegments <- function(data) {
+    previous    <- 2000
+    values      <- c()
+    start       <- c()
+    end         <- c()
+    for (i in 1:length(data)) {
+        if (data[i] != previous) {
+            start   <- c(start, i)
+            last    <- i - 1
+            if (last > 0) end <- c(end, last)
+            values  <- c(values, data[i])
+        }
+        previous    <- data[i]
     }
-    return(result);
+    end     <- c(end, length(data))
+    result  <- cbind(values, start, end)
+    result
+}
+
+.assignNames <- function(matrix, object) {
+    colnames(matrix) <- sampleNames(object)
+    rownames(matrix) <- featureNames(object)
+    matrix
+}
+
+.makeEmptyFeatureData <- function(object) {
+    dims        <- Biobase:::assayDataDims(object)
+    n           <- dims[1,1]
+    features    <-         
+    if (is(object, "environment")) ls(object)
+    else names(object)
+    nms         <- rownames(object[[features[[1]]]])
+    data        <- data.frame(Chromosome=numeric(n), Start=numeric(n), End=numeric(n), row.names=nms)
+    dimLabels   <- c("featureNames", "featureColumns")
+    metadata    <- data.frame(labelDescription=c("Chromosomal position", "Basepair position start", "Basepair position end"), row.names=c("Chromosome", "Start", "End"))
+    new("AnnotatedDataFrame", data=data, dimLabels=dimLabels, varMetadata=metadata)                  
+}
+
+.featureDataRequiredColumns <- function(featureData, columns) {
+    msg     <- NULL
+    absent  <- columns[!(columns %in% rownames(varMetadata(featureData)))]
+    if (length(absent) != 0) {
+        msg <- paste(msg, paste("missing columns' ", absent ,"' in featureData" , sep = "", collapse = "\n\t"), sep="\n")
+    }
+    if (is.null(msg)) TRUE else msg
 }
 
 .getCentromere <- function() {

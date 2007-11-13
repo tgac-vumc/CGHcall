@@ -1,9 +1,23 @@
-preprocess <- function(input, type="file", maxmiss=30, nchrom=22, ...) {
+make_cghRaw <- function(input) {
+    if (class(input) == "character") input  <- read.table(input, header=T, sep="\t", fill=T, quote="")
+    copynumber  <- as.matrix(input[,5:ncol(input)])
+    rownames(copynumber) <- input[,1]
+    annotation  <- data.frame(Chromosome=input[,2], Start=input[,3], End=input[,4], row.names=input[,1])
+    metadata    <- data.frame(labelDescription=c("Chromosomal position", "Basepair position start", "Basepair position end"), row.names=c("Chromosome", "Start", "End"))    
+    dimLabels   <- c("featureNames", "featureColumns")
+    annotation  <- new("AnnotatedDataFrame", data=annotation, dimLabels=dimLabels, varMetadata=metadata)   
+    result      <- new("cghRaw", copynumber=copynumber, featureData=annotation)
+}
 
-    ## Version 1.0
+preprocess <- function(input, maxmiss=30, nchrom=22, ...) {
+
+    ## Version 2.0
     ## Author: Sjoerd Vosse
     ## Email: s.vosse@vumc.nl
-    ## Date: 05-06-2007
+    ## Date: 23-10-2007
+    
+    ## Changes since previous version
+    ## - input is of class cghRaw
 
     ## This function preprocesses your arrayCGH data:
     ## - It throws out data with unknown positions
@@ -11,23 +25,12 @@ preprocess <- function(input, type="file", maxmiss=30, nchrom=22, ...) {
     ## - It removes rows with more than maxmiss % missing values
     ## - It imputes missing values using knnimpute
 
-    ## Some constants
-    name        <- 1    ## Clone name column
-    chromosome  <- 2    ## Chromosome column
-    position    <- 3    ## Position column
-
-    ## Read input data
-    inputData   <- CGHcall:::.readInput(input, type)
     ## Delete data with unknown position or chromosome number
-    inputData   <- inputData[!is.na(inputData[,chromosome]) & !is.na(inputData[,position]),];
-    inputData   <- inputData[inputData[,chromosome] != 0 & inputData[,position] != 0,];
+    input   <- input[!is.na(chromosomes(input)) & !is.na(bpstart(input))];
+    input   <- input[chromosomes(input) != 0 & bpstart(input) != 0,];
     
     ## Shrink to required number of chromosomes
-    inputData   <- inputData[inputData[,chromosome] <= nchrom,];
-    
-    ## Make data matrix
-    infoData    <- inputData[,c(name, chromosome, position)];
-    matrixData  <- as.matrix(inputData[,-c(name, chromosome, position)]);    
+    input   <- input[chromosomes(input) <= nchrom,];
     
     ## Remove rows with too many missing values
     countMissing <- function(x, maxMissing) {
@@ -35,67 +38,56 @@ preprocess <- function(input, type="file", maxmiss=30, nchrom=22, ...) {
         return(FALSE);
     }
     
-    allowed     <- ncol(matrixData) * maxmiss / 100;
-    filter      <- apply(matrixData, 1, countMissing, allowed);
-    infoData    <- infoData[filter,];
-    matrixData  <- matrixData[filter,];
+    allowed     <- ncol(input) * maxmiss / 100;
+    filter      <- apply(copynumber(input), 1, countMissing, allowed);
+    input       <- input[filter,]
     
     ## Impute data using impute.knn from package 'impute'
     if (!exists("k")) k <- 10
-    new.k       <- ceiling((1 - maxmiss / 100) * ncol(matrixData))
+    new.k       <- ceiling((1 - maxmiss / 100) * ncol(input))
     new.k       <- min(new.k, k)
     if (new.k != 10) cat("Changing impute.knn parameter k from", k, "to", new.k, "due to small sample size.\n")
-    result          <- impute::impute.knn(matrixData, k=new.k, ...);
-    imputedData     <- cbind(infoData, result$data);
+    result      <- impute::impute.knn(copynumber(input), k=new.k, ...);
+    copynumber(input) <- CGHcall:::.assignNames(result$data, input)
     
-    return(imputedData);
+    input
     
 }
 
-normalize <- function(input, type="dataframe", method="median", cellularity=1, smoothOutliers=TRUE, ...) {
+normalize <- function(input, method="median", cellularity=1, smoothOutliers=TRUE, ...) {
 
-    ## Version 1.0
+    ## Version 2.0
     ## Author: Sjoerd Vosse
     ## Email: s.vosse@vumc.nl
-    ## Date: 05-06-2007
+    ## Date: 24-10-2007
+    
+    ## Changes since previous version
+    ## - input is now cghRaw class
 
     ## This function normalizes the arrayCGH data using either global median, 
     ## global mean or no normalization. It can also adjust for the cellularity
     ## of your samples.
-
-    ## Some constants
-    name        <- 1;   ## Clone name column
-    chromosome  <- 2;   ## Chromosome column
-    position    <- 3;   ## Position column
-
-    ## Read input data
-    inputData   <- CGHcall:::.readInput(input, type)
-    
-    ## Make data matrix
-    infoData    <- inputData[,c(name, chromosome, position)];
-    matrixData  <- as.matrix(inputData[,-c(name, chromosome, position)]);
     
     ### Normalization
     values  <- c();
     if (method == "none") {
         cat("Skipping normalization ... \n");
-        normalizedData <- matrixData;
     } else {
         if (method == "median") {
             cat("Applying median normalization ... \n");
-            for (i in 1:ncol(matrixData)) {
-                values <- c(values, median(matrixData[,i]));
+            for (i in 1:ncol(input)) {
+                values <- c(values, median(copynumber(input)[,i]));
             }    
         } else if (method == "mode") {
             cat("Applying mode normalization ... \n");        
-            for (i in 1:ncol(matrixData)) {
-                density <- density(matrixData[,i]);
+            for (i in 1:ncol(input)) {
+                density <- density(input[,i]);
                 value   <- density$x[which(density$y == max(density$y))];
                 values  <- c(values, value);
             }        
         }
-        matrixValues    <- matrix(rep(values, nrow(matrixData)), ncol=ncol(matrixData), byrow=TRUE);
-        normalizedData  <- matrixData - matrixValues;
+        matrixValues    <- matrix(rep(values, nrow(input)), ncol=ncol(input), byrow=TRUE);
+        copynumber(input) <- copynumber(input) - matrixValues;
     }
     
     ### Adjusting for cellularity
@@ -124,50 +116,38 @@ normalize <- function(input, type="dataframe", method="median", cellularity=1, s
     
     if (smoothOutliers) {
         cat("Smoothing outliers ... \n");
-        CNA.object      <- DNAcopy::smooth.CNA(DNAcopy::CNA(normalizedData, infoData[,chromosome], infoData[,position], data.type="logratio"), ...);
-        smoothData      <- normalizedData;
-        for (i in 1:ncol(matrixData)) {
-            smoothData[,i] <- CNA.object[[i+2]];
+        CNA.object      <- DNAcopy::smooth.CNA(DNAcopy::CNA(copynumber(input), chromosomes(input), bpstart(input), data.type="logratio"), ...);
+        for (i in 1:ncol(input)) {
+            copynumber(input)[,i] <- CNA.object[[i+2]];
         }
-    } else {
-        smoothData      <- normalizedData;
     }
     
-    if (length(cellularity) < ncol(matrixData)) cellularity <- rep(cellularity, ncol(matrixData));
-    if (length(cellularity) > ncol(matrixData)) cellularity <- cellularity[1:ncol(matrixData)];
+    if (length(cellularity) < ncol(input)) cellularity <- rep(cellularity, ncol(input));
+    if (length(cellularity) > ncol(input)) cellularity <- cellularity[1:ncol(input)];
     
-    adjustedData <- adjustForCellularity(smoothData, cellularity);
-    returnData   <- cbind(infoData, adjustedData);
-    colnames(returnData) <- colnames(inputData);
-    return(returnData);
+    copynumber(input) <- CGHcall:::.assignNames(adjustForCellularity(copynumber(input), cellularity), input)
+    
+    input
     
 }
 
-segmentData <- function(input, type="dataframe", method="DNAcopy", ...) {
+segmentData <- function(input, method="DNAcopy", ...) {
 
-    ## Version 1.0
+    ## Version 2.0
     ## Author: Sjoerd Vosse
     ## Email: s.vosse@vumc.nl
-    ## Date: 05-06-2007
+    ## Date: 24-10-2007
 
     ## This function is a simple wrapper that applies existing segmentation
     ## algorithms (currently only DNAcopy) to your arrayCGH data.
 
-    ## Some constants
-    name        <- 1;   ## Clone name column
-    chromosome  <- 2;   ## Chromosome column
-    position    <- 3;   ## Position column
-
-    ## Read input data
-    inputData   <- CGHcall:::.readInput(input, type)
-    
-    ## Make data matrix
-    infoData    <- inputData[,c(name, chromosome, position)];
-    matrixData  <- as.matrix(inputData[,-c(name, chromosome, position)]);
+    ## Changes since previous version
+    ## - input is now cghRaw class
+    ## - output is cghSeg class
     
     if (method == "DNAcopy") {
     
-        CNA.object  <- DNAcopy::CNA(matrixData, infoData[,chromosome], infoData[,position], data.type="logratio");
+        CNA.object  <- DNAcopy::CNA(copynumber(input), chromosomes(input), bpstart(input), data.type="logratio");
     
         cat("Start data segmentation .. \n");
         segmented  <- DNAcopy::segment(CNA.object, ...);
@@ -184,9 +164,10 @@ segmentData <- function(input, type="dataframe", method="DNAcopy", ...) {
         for (j in 1:length(makelist)) {
             joined  <- c(joined, makelist[[j]])
         }
-        joined      <- matrix(joined, ncol=ncol(matrixData), byrow=FALSE)
-        segmented   <- data.frame(infoData, joined)
-        colnames(segmented) <- colnames(inputData)
+        joined      <- matrix(joined, ncol=ncol(input), byrow=FALSE)
+        joined      <- CGHcall:::.assignNames(joined, input)
+        result      <- CGHcall:::.segFromRaw(input, joined)
     }
-    return(segmented);
+    
+    result
 }

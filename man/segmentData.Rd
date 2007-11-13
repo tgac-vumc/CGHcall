@@ -5,16 +5,15 @@
   A wrapper function to run existing breakpoint detection algorithms on arrayCGH data. Currently only DNAcopy is implemented.
 }
 \usage{
-segmentData(input, type = "dataframe", method = "DNAcopy", ...)
+segmentData(input, method = "DNAcopy", ...)
 }
 \arguments{
-  \item{input}{ Either the name of a file or a dataframe. See details for the format. }
-  \item{type}{ What kind of data format is used as input? Either 'dataframe' or 'file'. }
+  \item{input}{ Object of class \code{\link{cghRaw}}. }
   \item{method}{ The method to be used for breakpoint detection. Currently only 'DNAcopy' is supported, which will run the \code{\link[DNAcopy]{segment}} function.}
   \item{\dots}{ Arguments for \code{\link[DNAcopy]{segment}}. }
 }
 \details{
-  The input should be either a dataframe or a tabseparated textfile (textfiles must contain a header). The first three columns should contain the name, chromosome and position in bp for each array target respectively. The chromosome and position column must contain numbers only. Following these is a column with normalized log2 ratios for each of your samples. If the input type is a textfile, missing values should be represented as 'NA' or an empty field.
+	See \code{\link[DNAcopy]{segment}} for details on the algorithm.
 }
 \value{
   This function returns a dataframe in the same format as the input with segmented arrayCGH data.
@@ -25,11 +24,13 @@ segmentData(input, type = "dataframe", method = "DNAcopy", ...)
 \author{ Sjoerd Vosse & Mark van de Wiel }
 \examples{
   data(Wilting)
+  ## Convert to \code{\link{cghRaw}} object
+  cgh <- make_cghRaw(Wilting)
   ## First preprocess the data
-  raw.data <- preprocess(Wilting, type="dataframe")
+  raw.data <- preprocess(cgh)
   ## Simple global median normalization for samples with 75\% tumor cells
   perc.tumor <- rep(0.75, 3)
-  normalized.data <- normalize(raw.data, cellularity=perc.tumor)
+  normalized.data <- normalize(raw.data, cellularity=perc.tumor)  
   ## Segmentation with slightly relaxed significance level to accept change-points.
   ## Note that segmentation can take a long time.
   \dontrun{segmented.data <- segmentData(normalized.data, alpha=0.02)}
