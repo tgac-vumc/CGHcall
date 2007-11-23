@@ -24,6 +24,10 @@ preprocess <- function(input, maxmiss=30, nchrom=22, ...) {
     ## - It shrinks your data to nchrom chromosomes
     ## - It removes rows with more than maxmiss % missing values
     ## - It imputes missing values using knnimpute
+    
+    ## Sort data by bppos, just to make sure
+    input   <- input[order(bpstart(input)),]
+    input   <- input[order(chromosomes(input)),]
 
     ## Delete data with unknown position or chromosome number
     input   <- input[!is.na(chromosomes(input)) & !is.na(bpstart(input))];
