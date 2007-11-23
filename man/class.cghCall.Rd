@@ -140,7 +140,7 @@ new("cghCall")
 # create an instance of cghCall through \code{\link{CGHcall}}
 \dontrun{
    data(Wilting)
-   rawcgh <- make_cghSeg(Wilting)
+   rawcgh <- make_cghRaw(Wilting)
    normalized <- normalize(rawcgh)
    segmented <- segmentData(normalized)
    called <- CGHcall(segmented)
