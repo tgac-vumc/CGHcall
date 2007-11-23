@@ -141,7 +141,8 @@ new("cghCall")
 \dontrun{
    data(Wilting)
    rawcgh <- make_cghRaw(Wilting)
-   normalized <- normalize(rawcgh)
+   cghdata <- preprocess(cghdata)
+   normalized <- normalize(cghdata)
    segmented <- segmentData(normalized)
    called <- CGHcall(segmented)
 
