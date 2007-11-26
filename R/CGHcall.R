@@ -209,7 +209,7 @@ CGHcall <- function(inputSegmented, prior="auto", nclass=3, organism="human") {
             probloss <- cbind(probloss, probs[,i*count+2])
             probnorm <- cbind(probnorm, probs[,i*count+3])
             probgain <- cbind(probgain, probs[,i*count+4])
-            if (nclass==4) probamp <- cbind(probs[,i*count+4])
+            if (nclass==4) probamp <- cbind(probamp, probs[,i*count+4])
         }
         if (nclass == 3) result  <- list(loss=probloss, normal=probnorm, gain=probgain)
         else if (nclass == 4) result  <- list(loss=probloss, normal=probnorm, gain=probgain, amp=probamp)
@@ -227,7 +227,7 @@ CGHcall <- function(inputSegmented, prior="auto", nclass=3, organism="human") {
                                                 probloss    = CGHcall:::.assignNames(probs$loss, inputSegmented), 
                                                 probnorm    = CGHcall:::.assignNames(probs$normal, inputSegmented), 
                                                 probgain    = CGHcall:::.assignNames(probs$gain, inputSegmented)
-                                                )
+                                              )
     else if (nclass == 4) assayData <- assayDataNew(copynumber  = copynumber(inputSegmented),
                                                     segmented   = segmented(inputSegmented),
                                                     calls       = CGHcall:::.assignNames(classify.res, inputSegmented), 
@@ -235,9 +235,9 @@ CGHcall <- function(inputSegmented, prior="auto", nclass=3, organism="human") {
                                                     probnorm    = CGHcall:::.assignNames(probs$normal, inputSegmented), 
                                                     probgain    = CGHcall:::.assignNames(probs$gain, inputSegmented),
                                                     probamp     = CGHcall:::.assignNames(probs$amp, inputSegmented)
-                                                    )
+                                                   )
                                                             
-    result  <- CGHcall:::.callFromSeg(inputSegmented, assayData)                                                            
+    result  <- CGHcall:::.callFromSeg(inputSegmented, assayData)
     
     cat("FINISHED!\n")
     timeFinished <- round((proc.time() - timeStarted)[1] / 60)
