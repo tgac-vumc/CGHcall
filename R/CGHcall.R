@@ -209,7 +209,7 @@ CGHcall <- function(inputSegmented, prior="auto", nclass=3, organism="human") {
             probloss <- cbind(probloss, probs[,i*count+2])
             probnorm <- cbind(probnorm, probs[,i*count+3])
             probgain <- cbind(probgain, probs[,i*count+4])
-            if (nclass==4) probamp <- cbind(probamp, probs[,i*count+4])
+            if (nclass==4) probamp <- cbind(probamp, probs[,i*count+5])
         }
         if (nclass == 3) result  <- list(loss=probloss, normal=probnorm, gain=probgain)
         else if (nclass == 4) result  <- list(loss=probloss, normal=probnorm, gain=probgain, amp=probamp)
@@ -219,7 +219,11 @@ CGHcall <- function(inputSegmented, prior="auto", nclass=3, organism="human") {
     allmeanold  <- allsumold/allnc  #include amplifications
     profmeannc  <- cbind(profile, allmeanold, regions)
     
+    print(head(dataprob))
+    
     probs       <- splitProbs(dataprob)
+    
+    print(probs$amp[1:5,])
     
     if (nclass == 3) assayData <- assayDataNew( copynumber  = copynumber(inputSegmented),
                                                 segmented   = segmented(inputSegmented),
