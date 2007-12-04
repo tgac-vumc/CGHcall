@@ -21,7 +21,7 @@ function (x, y, ... )
 {
     for (i in 1:ncol(x)) {
         cat("Plotting sample", sampleNames(x)[i], "\n")
-        segment         <- CGHcall:::.makeSegments(segmented(x)[,i])
+        segment         <- CGHcall:::.makeSegments(cbind(chromosomes(x), segmented(x)[,i]))
         chrom           <- chromosomes(x)
         data            <- data.frame(chrom, bpstart(x), copynumber(x)[,i])
         colnames(data)  <- c("chromosome", "position", "ratio")

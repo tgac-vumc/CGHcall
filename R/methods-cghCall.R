@@ -60,7 +60,7 @@ function (x, y, ... )
             probsdraw   <- cbind(probsdraw[,1:2], probsdraw[,3] + probsdraw[,4])
         }
            
-        segment         <- CGHcall:::.makeSegments(segmented(x)[,i])
+        segment         <- CGHcall:::.makeSegments(cbind(chromosomes(x), segmented(x)[,i]))
         
         widths          <- segment[,3] - segment[,2] + 1
         plot.data       <- unique(probsdraw)

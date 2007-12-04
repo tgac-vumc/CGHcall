@@ -20,20 +20,23 @@
 }
 
 .makeSegments <- function(data) {
+    if (class(data) != "matrix") {
+        cat("Wrong data class for input to function CGHcall:::.makeSegments in file private.R\n")
+    }
     previous    <- 2000
     values      <- c()
     start       <- c()
     end         <- c()
-    for (i in 1:length(data)) {
-        if (data[i] != previous) {
+    for (i in 1:nrow(data)) {
+        if (!all(data[i,] == previous)) {
             start   <- c(start, i)
             last    <- i - 1
             if (last > 0) end <- c(end, last)
-            values  <- c(values, data[i])
+            values  <- c(values, data[i,2])
         }
-        previous    <- data[i]
+        previous    <- data[i,]
     }
-    end     <- c(end, length(data))
+    end     <- c(end, nrow(data))
     result  <- cbind(values, start, end)
     result
 }
