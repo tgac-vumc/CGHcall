@@ -72,9 +72,15 @@
 .getCentromere <- function() {
     ### Centromere data from http://genome.ucsc.edu
     ### Database March 2006
-    ### Date: 11 september 2006
+    ### Date: 10 january 2007
+    ### 1) go to the Table Browser (http://genome.ucsc.edu/cgi-bin/hgText)
+    ### 2) select ChrN_gap under the positional tables drop box
+    ### 3) Select Advanced Query button
+    ### 4) Select Tab-separated, all fields for output option
+    ### 5) Under the filter, type in "centromere" for the "type" fields
+    ### 6) Hit Get Results button
     
-    centromere       <- matrix(NA, 22, 2);
+    centromere       <- matrix(NA, 24, 2);
     centromere[1,1]  <- 121236957;    
     centromere[1,2]  <- 123476957;
     centromere[2,1]  <- 91689898;
@@ -119,6 +125,11 @@
     centromere[21,2] <- 13260000;
     centromere[22,1] <- 11330000; 
     centromere[22,2] <- 14330000;
+    centromere[23,1] <- 58598737; 
+    centromere[23,2] <- 61598737;  
+    centromere[24,1] <- 12208578;
+    centromere[24,2] <- 12308578;
+    
     centromere       <- apply(centromere, 1, mean);
     return(centromere);
 }
