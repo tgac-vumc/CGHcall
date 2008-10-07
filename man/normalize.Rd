@@ -8,7 +8,7 @@
 normalize(input, method = "median", cellularity = 1, smoothOutliers = TRUE, ...)
 }
 \arguments{
-  \item{input}{ Object of class \code{\link{cghRaw}}. }
+  \item{input}{ Object of class \code{\link[CGHbase:class.cghRaw]{cghRaw}}. }
   \item{method}{ Normalization method, either 'median', 'mode', or 'none'. }
   \item{cellularity}{ A vector of cellularities ranging from 0 to 1 to define the contamination of your sample with healthy cells (1 = no contamination). See details for more information. }
   \item{smoothOutliers}{ Logical. Indicates whether outliers should be smoothed using the \code{\link[DNAcopy]{smooth.CNA}} function.}
@@ -22,9 +22,9 @@ normalize(input, method = "median", cellularity = 1, smoothOutliers = TRUE, ...)
 }
 \author{ Sjoerd Vosse & Mark van de Wiel }
 \examples{
-  data(Wilting)
-  ## Convert to \code{\link{cghRaw}} object
-  cgh <- make_cghRaw(Wilting)
+  data(WiltingData)
+  ## Convert to \code{\link[CGHbase]{cghRaw}} object
+  cgh <- cghRaw(WiltingData)
   ## First preprocess the data
   raw.data <- preprocess(cgh)
   ## Simple global median normalization for samples with 75\% tumor cells

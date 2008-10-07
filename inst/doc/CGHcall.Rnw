@@ -44,8 +44,8 @@ In this section we will use CGHcall to call and visualize the aberrations in the
 
 <<echo=TRUE,print=FALSE>>=
 library(CGHcall)
-data(Wilting)
-Wilting <- make_cghRaw(Wilting)
+data(WiltingData)
+Wilting <- cghRaw(WiltingData)
 @
 
 \noindent
@@ -104,7 +104,7 @@ Alternatively, we can create a summary plot of all the samples:
 
 \begin{center}
 <<fig=TRUE,echo=TRUE>>=
-plot.summary(result)
+summaryPlot(result)
 @
 \end{center}
 

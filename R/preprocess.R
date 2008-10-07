@@ -1,14 +1,3 @@
-make_cghRaw <- function(input) {
-    if (class(input) == "character") input  <- read.table(input, header=T, sep="\t", fill=T, quote="")
-    copynumber  <- as.matrix(input[,5:ncol(input)])
-    rownames(copynumber) <- input[,1]
-    annotation  <- data.frame(Chromosome=input[,2], Start=input[,3], End=input[,4], row.names=input[,1])
-    metadata    <- data.frame(labelDescription=c("Chromosomal position", "Basepair position start", "Basepair position end"), row.names=c("Chromosome", "Start", "End"))    
-    dimLabels   <- c("featureNames", "featureColumns")
-    annotation  <- new("AnnotatedDataFrame", data=annotation, dimLabels=dimLabels, varMetadata=metadata)   
-    result      <- new("cghRaw", copynumber=copynumber, featureData=annotation)
-}
-
 preprocess <- function(input, maxmiss=30, nchrom=22, ...) {
 
     ## Version 2.0

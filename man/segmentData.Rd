@@ -8,7 +8,7 @@
 segmentData(input, method = "DNAcopy", ...)
 }
 \arguments{
-  \item{input}{ Object of class \code{\link{cghRaw}}. }
+  \item{input}{ Object of class \code{\link[CGHbase:class.cghRaw]{cghRaw}}. }
   \item{method}{ The method to be used for breakpoint detection. Currently only 'DNAcopy' is supported, which will run the \code{\link[DNAcopy]{segment}} function.}
   \item{\dots}{ Arguments for \code{\link[DNAcopy]{segment}}. }
 }
@@ -23,16 +23,7 @@ segmentData(input, method = "DNAcopy", ...)
 }
 \author{ Sjoerd Vosse & Mark van de Wiel }
 \examples{
-  data(Wilting)
-  ## Convert to \code{\link{cghRaw}} object
-  cgh <- make_cghRaw(Wilting)
-  ## First preprocess the data
-  raw.data <- preprocess(cgh)
-  ## Simple global median normalization for samples with 75\% tumor cells
-  perc.tumor <- rep(0.75, 3)
-  normalized.data <- normalize(raw.data, cellularity=perc.tumor)  
-  ## Segmentation with slightly relaxed significance level to accept change-points.
-  ## Note that segmentation can take a long time.
-  \dontrun{segmented.data <- segmentData(normalized.data, alpha=0.02)}
+  data(WiltingNorm)
+  \dontrun{segmented.data <- segmentData(WiltingNorm, alpha=0.02)}
 }
 \keyword{ misc }

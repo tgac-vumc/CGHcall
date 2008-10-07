@@ -8,7 +8,7 @@
 preprocess(input, maxmiss = 30, nchrom = 22, ...)
 }
 \arguments{
-  \item{input}{ Object of class \code{\link{cghRaw}}. }
+  \item{input}{ Object of class \code{\link[CGHbase:class.cghRaw]{cghRaw}}. }
   \item{maxmiss}{ Maximum percentage of missing values per row. }
   \item{nchrom}{ Number of chromosomes. }
   \item{\dots}{ Arguments for \code{\link[impute]{impute.knn}} from the impute package. }
@@ -30,10 +30,7 @@ preprocess(input, maxmiss = 30, nchrom = 22, ...)
 }
 \author{ Sjoerd Vosse & Mark van de Wiel }
 \examples{
-  data(Wilting)
-  ## Convert to \code{\link{cghRaw}} object
-  cgh <- make_cghRaw(Wilting)
-  ## Preprocess the data
-  raw.data <- preprocess(cgh)
+  data(WiltingRaw)
+  preprocessed <- preprocess(WiltingRaw)
 }
 \keyword{ misc }

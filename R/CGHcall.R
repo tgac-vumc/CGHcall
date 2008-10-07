@@ -219,11 +219,7 @@ CGHcall <- function(inputSegmented, prior="auto", nclass=3, organism="human") {
     allmeanold  <- allsumold/allnc  #include amplifications
     profmeannc  <- cbind(profile, allmeanold, regions)
     
-    print(head(dataprob))
-    
     probs       <- splitProbs(dataprob)
-    
-    print(probs$amp[1:5,])
     
     if (nclass == 3) assayData <- assayDataNew( copynumber  = copynumber(inputSegmented),
                                                 segmented   = segmented(inputSegmented),
