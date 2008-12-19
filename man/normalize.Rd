@@ -23,7 +23,7 @@ normalize(input, method = "median", cellularity = 1, smoothOutliers = TRUE, ...)
 \author{ Sjoerd Vosse & Mark van de Wiel }
 \examples{
   data(WiltingData)
-  ## %Convert to \code{\link[CGHbase]{cghRaw}} object
+  ## Convert to \code{\link[CGHbase]{cghRaw}} object
   cgh <- cghRaw(WiltingData)
   ## First preprocess the data
   raw.data <- preprocess(cgh)
