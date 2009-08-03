@@ -9,7 +9,7 @@ postsegnormalize(input, inter=c(-0.1,0.1))
 }
 \arguments{
   \item{input}{ Object of class \code{\link{cghSeg}}. }
- \item{inter}{Interval in which the function should search for the normal level.
+ \item{inter}{Interval in which the function should search for the normal level.}
  }
 \details{
  This function recursively searches for the interval containing the most segmented data, decreasing the interval length in each recursion.
@@ -34,6 +34,6 @@ postsegnormalize(input, inter=c(-0.1,0.1))
   ## Segmentation with slightly relaxed significance level to accept change-points.
   ## Note that segmentation can take a long time.
   \dontrun{segmented.data <- segmentData(normalized.data, alpha=0.02)}
-  \dontrun{postsegnormalized.data <- postsegnormalize(segmented.data)}
+  \dontrun{postsegnormalized.data <- postsegnormalize(segmented.data, inter=c(-0.1,0.1))}
   }
 \keyword{ misc }

@@ -2,10 +2,10 @@
 \alias{preprocess}
 \title{ Preprocess arrayCGH data }
 \description{
-	This function preprocesses your aCGH data so it can be processed by other functions without errors.
+    This function preprocesses your aCGH data so it can be processed by other functions without errors.
 }
 \usage{
-preprocess(input, maxmiss = 30, nchrom = 22, ...)
+preprocess(input, maxmiss = 30, nchrom = 23, ...)
 }
 \arguments{
   \item{input}{ Object of class \code{\link[CGHbase:class.cghRaw]{cghRaw}}. }
@@ -31,6 +31,6 @@ preprocess(input, maxmiss = 30, nchrom = 22, ...)
 \author{ Sjoerd Vosse & Mark van de Wiel }
 \examples{
   data(WiltingRaw)
-  preprocessed <- preprocess(WiltingRaw)
+  preprocessed <- preprocess(WiltingRaw, nchrom = 22)
 }
 \keyword{ misc }
