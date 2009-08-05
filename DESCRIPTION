@@ -1,8 +1,8 @@
 Package:    CGHcall
 Type:       Package
 Title:      Calling aberrations for array CGH tumor profiles.
-Version:    1.4.0
-Date:       2009-06-22
+Version:    2.5.0
+Date:       2009-08-05
 Author:     Sjoerd Vosse and Mark van de Wiel
 Maintainer: Sjoerd Vosse <s.vosse@vumc.nl>
 Depends:    R (>= 2.0.0), impute(>= 1.8.0), DNAcopy (>= 1.6.0), methods, Biobase, CGHbase
