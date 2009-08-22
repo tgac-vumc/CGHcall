@@ -95,7 +95,7 @@
 # create an instance of cghSeg
 new("cghSeg")
 
-# create an instance of cghSeg through \code{segmentData}
+# create an instance of cghSeg through 'segmentData'
 \dontrun{
    data(Wilting)
    rawcgh <- make_cghSeg(Wilting)
