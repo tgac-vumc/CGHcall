@@ -16,18 +16,21 @@
 \alias{plot,cghRaw,missing-method}
 
 \title{
-  Class to contain and describe raw or normalized array comparative genomic hybridization data.
+  Class to contain and describe raw or normalized array comparative
+  genomic hybridization data. 
 }
 
 \description{
   Container for aCGH data and experimental
   metadata. \code{cghRaw} class is derived from
-  \code{\link[Biobase]{eSet}}, and requires a matrix named \code{copynumber} as
-  assayData member. Furthermore, columns named \code{Chromosome}, \code{Start}, and \code{End}
+  \code{\link[Biobase:class.eSet]{eSet}}, and requires a matrix named
+  \code{copynumber} as 
+  assayData member. Furthermore, columns named \code{Chromosome},
+  \code{Start}, and \code{End} 
   are required as featureData members, containing feature position information.
 }
 \section{Extends}{
-   Directly extends class \code{\link[Biobase]{eSet}}.
+   Directly extends class \code{\link[Biobase:class.eSet]{eSet}}.
 }
 \section{Creating Objects}{
 
@@ -59,33 +62,41 @@
 	\code{copynumber} with rows represening array probes
 	and columns representing samples. Additional matrices of
 	identical size (e.g., representing measurement errors) may
-	also be included in \code{assayData}. Class:\code{\link[Biobase]{AssayData-class}}}
-      \item{\code{phenoData}:}{See \code{\link[Biobase]{eSet}}}
-      \item{\code{featureData}:}{An \code{\link[Biobase]{AnnotatedDataFrame}} with columns
+	also be included in
+	\code{assayData}. Class:\code{\link[Biobase:class.AssayData]{AssayData-class}}} 
+      \item{\code{phenoData}:}{See \code{\link[Biobase:class.eSet]{eSet}}}
+      \item{\code{featureData}:}{An
+	\code{\link[Biobase:class.AnnotatedDataFrame]{AnnotatedDataFrame}}
+	with columns 
 	\code{Chromosome}, \code{Start}, and \code{End} containing array element position 
 	data.}
-      \item{\code{experimentData}:}{See \code{\link[Biobase]{eSet}}}
-      \item{\code{annotation}:}{See \code{\link[Biobase]{eSet}}}
+      \item{\code{experimentData}:}{See \code{\link[Biobase:class.eSet]{eSet}}}
+      \item{\code{annotation}:}{See \code{\link[Biobase:class.eSet]{eSet}}}
   }
 }
 \section{Methods}{
 
   Class-specific methods.
   \describe{
-     \item{\code{copynumber(cghRaw)}, \code{copynumber(cghRaw,matrix)<-}}{Access and
+     \item{\code{copynumber(cghRaw)},
+       \code{copynumber(cghRaw,matrix)<-}}{Access and 
        set elements named \code{copynumber} in the \code{AssayData-class}
        slot.}
-     \item{\code{chromosomes}, \code{bpstart}, \code{bpend}}{Access the chromosomal positions stored in \code{featureData}}
-     \item{plot}{Create a plot containing log2ratios ordered by chromosomal position}
+     \item{\code{chromosomes}, \code{bpstart}, \code{bpend}}{Access the
+       chromosomal positions stored in \code{featureData}} 
+     \item{plot}{Create a plot containing log2ratios ordered by
+       chromosomal position} 
     }
 
-   See \code{\link[Biobase]{eSet}} for derived methods. Annotation functionality is not yet supported.   
+   See \code{\link[Biobase:class.eSet]{eSet}} for derived
+   methods. Annotation functionality is not yet supported.    
 }
 
 \author{Sjoerd Vosse}
 
 \seealso{
-  \code{\link[Biobase]{eSet-class}}, \code{\link{cghSeg-class}}, \code{\link{cghCall-class}}
+  \code{\link[Biobase:class.eSet]{eSet-class}},
+  \code{\link{cghSeg-class}}, \code{\link{cghCall-class}} 
 }
 
 \examples{
