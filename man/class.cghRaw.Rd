@@ -16,8 +16,7 @@
 \alias{plot,cghRaw,missing-method}
 
 \title{
-  Class to contain and describe raw or normalized array comparative
-  genomic hybridization data. 
+  Class to contain and describe raw or normalized array comparative genomic hybridization data.
 }
 
 \description{
@@ -25,8 +24,7 @@
   metadata. \code{cghRaw} class is derived from
   \code{\link[Biobase:class.eSet]{eSet}}, and requires a matrix named
   \code{copynumber} as 
-  assayData member. Furthermore, columns named \code{Chromosome},
-  \code{Start}, and \code{End} 
+  assayData member. Furthermore, columns named \code{Chromosome}, \code{Start}, and \code{End}
   are required as featureData members, containing feature position information.
 }
 \section{Extends}{
@@ -63,7 +61,7 @@
 	and columns representing samples. Additional matrices of
 	identical size (e.g., representing measurement errors) may
 	also be included in
-	\code{assayData}. Class:\code{\link[Biobase:class.AssayData]{AssayData-class}}} 
+	\code{assayData}. Class:\code{\link[Biobase:class.AssayData]{AssayData-class}}}  
       \item{\code{phenoData}:}{See \code{\link[Biobase:class.eSet]{eSet}}}
       \item{\code{featureData}:}{An
 	\code{\link[Biobase:class.AnnotatedDataFrame]{AnnotatedDataFrame}}
@@ -78,14 +76,11 @@
 
   Class-specific methods.
   \describe{
-     \item{\code{copynumber(cghRaw)},
-       \code{copynumber(cghRaw,matrix)<-}}{Access and 
+     \item{\code{copynumber(cghRaw)}, \code{copynumber(cghRaw,matrix)<-}}{Access and
        set elements named \code{copynumber} in the \code{AssayData-class}
        slot.}
-     \item{\code{chromosomes}, \code{bpstart}, \code{bpend}}{Access the
-       chromosomal positions stored in \code{featureData}} 
-     \item{plot}{Create a plot containing log2ratios ordered by
-       chromosomal position} 
+     \item{\code{chromosomes}, \code{bpstart}, \code{bpend}}{Access the chromosomal positions stored in \code{featureData}}
+     \item{plot}{Create a plot containing log2ratios ordered by chromosomal position}
     }
 
    See \code{\link[Biobase:class.eSet]{eSet}} for derived
@@ -96,7 +91,8 @@
 
 \seealso{
   \code{\link[Biobase:class.eSet]{eSet-class}},
-  \code{\link{cghSeg-class}}, \code{\link{cghCall-class}} 
+  \code{\link{cghSeg-class}}, \code{\link{cghCall-class}}
+  
 }
 
 \examples{

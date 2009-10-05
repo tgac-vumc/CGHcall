@@ -59,7 +59,7 @@
     identical size (e.g., representing measurement errors) may
     also be included in
     \code{assayData}. Class:\code{\link[Biobase:class.AssayData]{AssayData-class}}}  
-      \item{\code{phenoData}:}{See \code{\link[Biobase:clsss.eSet]{eSet}}}
+      \item{\code{phenoData}:}{See \code{\link[Biobase:class.eSet]{eSet}}}
       \item{\code{featureData}:}{An
 	\code{\link[Biobase:class.AnnotatedDataFrame]{AnnotatedDataFrame}}
 	with columns 
