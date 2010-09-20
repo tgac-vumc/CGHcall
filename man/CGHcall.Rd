@@ -5,7 +5,7 @@
   Calls aberrations for array CGH data using a six state mixture model.
 }
 \usage{
-CGHcall(inputSegmented, prior = "auto", nclass = 3, organism = "human", robustsig="yes", digits = 3, nsegfit=3000, maxnumseg=100, minlsforfit=0.5)
+CGHcall(inputSegmented, prior = "auto", nclass = 3, organism = "human", robustsig="yes", nsegfit=3000, maxnumseg=100, minlsforfit=0.5)
 }
 \arguments{
   \item{inputSegmented}{ An object of class \code{\link{cghSeg}} }
@@ -13,7 +13,6 @@ CGHcall(inputSegmented, prior = "auto", nclass = 3, organism = "human", robustsi
   \item{nclass}{ The number of levels to be used for calling. Either \code{3} (loss, normal, gain) or \code{4} (including amplifications). }
   \item{organism}{ Either \code{human} or \code{other}. This is only used for chromosome arm information when \code{prior} is set to \code{all} or \code{auto} (and samplesize > 20). }
   \item{robustsig}{Options are \code{yes} or \code{no}. \code{yes} enforces a lower bound on the standard deviation of the normal segments}
-  \item{digits}{Number of decimal digits to be saved in the resulting call object. Allows for saving storage space} 
   \item{nsegfit}{Maximum number of segments used for fitting the mixture model. Posterior probabilities are computed for all segments}
   \item{maxnumseg}{Maximum number of segments per profile used for fitting the model}
   \item{minlsforfit}{Minimum length of the segment (in Mb) to be used for fitting the model}
@@ -30,21 +29,27 @@ CGHcall(inputSegmented, prior = "auto", nclass = 3, organism = "human", robustsi
     time with respect to previous CGHcall versions without much accuracy loss. Moreover, "maxnumseg" decreases the 
     impact on the results of profiles with inferior segmentation results. Finally, "minlsforfit" decreases the impact
     of very small aberations (potentially CNVs rather than CNAs) on the fit of the model. Note that always a result for all 
-    segments is produced. 
+    segments is produced. IN MOST CASES, CGHcall SHOULD BE FOLLOWED BY FUNCTION ExpandCGHcall. 
 }
 \value{
-    This function return a list with three components:
-  \item{probabilities }{A dataframe with 3 columns of probe information (name, chromosome and position), followed by k columns with aberration probabilities for each sample, where k is the number of levels used for calling (\code{nclass}).}
-  \item{calls }{A dataframe with the calls for each sample. Values are \code{-1} (loss), \code{0} (normal) or \code{1} (gain). If 4 levels were used for calling, a value of \code{2} represents an amplification.}
-  \item{segments }{A matrix with the segments for each profile. The first column contains the sample number. The second column the level of the current segment and the third and fourth columns the start and end of the segment in probe number respectively.}
+    This function return a list with five components:
+  \item{posteriorfin2}{Matrix containing call probabilities for each segment. First column denotes profile number, followed by k columns with aberration probabilities for each sample, where k is the number of levels used for calling (\code{nclass}).}
+  \item{nclone }{Number of clone or probes}
+  \item{nc}{Number of samples}
+  \item{Number of classes used}
+  \item{regionsprof}{Matrix containing information about the segments, 4 colums: profile, start probe, end probe, segmented value}
+
 }
+
+\seealso{\code{\link{ExpandCGHcall}}}
+
 \references{
   Mark A. van de Wiel, Kyung In Kim, Sjoerd J. Vosse, Wessel N. van Wieringen, Saskia M. Wilting and Bauke Ylstra. CGHcall: calling aberrations for array CGH tumor profiles. \emph{Bioinformatics, 23}, 892-894.
 }
 \author{ Sjoerd Vosse & Mark van de Wiel }
 \examples{
   data(Wilting)
-  ## Convert to cghRaw object
+  ## Convert to \code{\link{cghRaw}} object
   cgh <- make_cghRaw(Wilting)
   print(cgh)
   ## First preprocess the data
@@ -58,5 +63,8 @@ CGHcall(inputSegmented, prior = "auto", nclass = 3, organism = "human", robustsi
   \dontrun{postsegnormalized.data <- postsegnormalize(segmented.data)}
   ## Call aberrations
   \dontrun{result <- CGHcall(postsegnormalized.data)}
+  
+  ## Expand to CGHcall object
+  \dontrun{result <- ExpandCGHcall(result,postsegnormalized.data)}
 }
 \keyword{ misc }

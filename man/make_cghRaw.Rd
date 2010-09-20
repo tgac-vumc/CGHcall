@@ -19,7 +19,7 @@ make_cghRaw(input)
 \author{ Sjoerd Vosse & Mark van de Wiel }
 \examples{
   data(Wilting)
-  ## Convert to 'cghRaw' object
+  ## Convert to \code{\link{cghRaw}} object
   cgh <- make_cghRaw(Wilting)
 }
 \keyword{ misc }

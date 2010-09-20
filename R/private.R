@@ -19,6 +19,7 @@
     result
 }
 
+
 .makeSegments <- function(data,chrdata) {
     #data <- segmented(x)[,5]
 #    chrdata <- chromosomes(x)
@@ -158,7 +159,7 @@
 #}
 
 
-.convertChromosomeToArm <- function(dataframe) { #changed 22/06/2009; more efficient
+.convertChromosomeToArm <- function(dataframe) { #changed 22/06/2009; 
     cat("Dividing chromosomes into arms:\n\n");
     centromere  <- CGHcall:::.getCentromere();
     chr <- dataframe[,2]
@@ -318,45 +319,16 @@
 #    return(meanpost[profile==prof,])
 #}
 
-.MakeData <- function(datacgh) {
-    #datacgh<-combined
-    naam1       <- datacgh[,1]
-    datachr     <- datacgh[,2]
-    posit       <- datacgh[,3]
-    getnames    <- colnames(datacgh)
-    ndatac      <- ncol(datacgh)-3
-    takenames   <- getnames[4:(3+(ndatac)/2)]
-    first3      <- getnames[1:3]
-    
-    spl <- function(strin1, strin) {
-        paste(strin1, strin, sep="")
-    }
-    
-    callnames   <- as.vector(lapply(takenames, spl, strin1="Call_"), mode='character')
-    probnames   <- as.vector(lapply(takenames, spl, strin1="Prob_"), mode='character')
-    newcolnames <- as.vector(c(first3, callnames, probnames), mode='character')
-    seqlr       <- 4:(3+ndatac/2)
-    seqsr       <- (4+ndatac/2):(4+ndatac-1)
-    logratios   <- datacgh[,seqlr]
-    sr          <- datacgh[,seqsr]
-    dataout     <- data.frame(naam1, datachr, posit, logratios, sr)
-    dataout     <- dataout[!is.na(datachr) & !is.na(naam1),]
-    smallrat    <- dataout[,(4+ndatac/2):(4+ndatac-1)]
-    posit       <- dataout[,3]
-    chrinfo     <- dataout[,2]
-    datac       <- data.frame(naam1=dataout[,1], chrinfo, posit, logratios, smallrat)
-    
-    #Region Def
-    allregions  <- vector("list", ndatac/2)
-    chrnum      <- datac[,2]
-    
-    for (j in 1:(ndatac/2)) {
-        smrat   <- datac[,(3+ndatac/2 + j)] #changed 19/06/2009, much faster
-        ls      <- length(smrat)
+.MakeData <- function(smratall,chrnum) {  #updated 16/07/10
+    #smratall <- datmat[,-(1:nc)];chrnum<-chr;
+    nc <- ncol(smratall)
+    allregions  <- vector("list", nc)
+    ls      <- length(chrnum)
+    chrnumfw <- c(100,chrnum[-ls])
+    for (j in 1:(nc)) {
+        smrat   <- smratall[,j] #changed 19/06/2009, much faster
         smratshfw <- c(100,smrat[-ls])
         smratshbw <- c(smrat[-1],100)
-        chrnumfw <- c(100,chrnum[-ls])
-        
         mult <- (smrat-smratshfw)*(smratshbw-smratshfw) + (chrnumfw-chrnum)
         wm <- which(mult!=0)
         smwh <- smrat[wm]
@@ -375,6 +347,7 @@
 #        if (length(br) ==1) breakpos <- difind[breaks == 1,][1]
 #        if (length(br) > 1) breakpos <- difind[breaks == 1,][,1]
 #        regions <- cbind(append(breakpos, 1, 0), append(breakpos-1, ls, length(breakpos)))
+    rm(smrat,smratshfw,smratshbw,mult,smwh,wm);gc()
     }
-    return(list(datac,allregions))
+    return(allregions)
 }

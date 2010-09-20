@@ -1,6 +1,14 @@
-CGHcall <- function(inputSegmented, prior="auto", nclass=3, organism="human", robustsig="yes",digits = 3,nsegfit=3000,maxnumseg=100,minlsforfit=0.5) {
-    #load("seg.Rdata");inputSegmented <- seg[,1:5]; prior="auto"; nclass=4; organism="human"; robustsig="yes";digits=3;nsegfit=100;maxnumseg=100;minlsforfit=0.5
+CGHcall <- function(inputSegmented, prior="auto", nclass=3, organism="human", robustsig="yes",nsegfit=3000,maxnumseg=100,minlsforfit=0.5) {
+  #  library(CGHcall)
+#    setwd("C:\\VUData\\Maria")
+#    #rm(list=ls())
+#    memory.limit(size = 4000)
+#    load("seg.Rdata")
+#    inputSegmented <- seg; prior="auto"; nclass=4; organism="human"; robustsig="yes";nsegfit=500;maxnumseg=100;minlsforfit=0.5
+    timeStarted <- proc.time()
     print("changed")
+    gc() #memory usage in Mb
+    
     ## Version 2.0
     ## Author: Mark van de Wiel
     ## Maintainer: Sjoerd Vosse
@@ -13,20 +21,32 @@ CGHcall <- function(inputSegmented, prior="auto", nclass=3, organism="human", ro
     timeStarted <- proc.time()
 
     ## Read input data
-    normalizedData  <- copynumber(inputSegmented)
-    segmentedData   <- segmented(inputSegmented)
-    combined        <- data.frame(featureNames(inputSegmented), chromosomes(inputSegmented), bpstart(inputSegmented), normalizedData, segmentedData)
-    bw <- round(20*minlsforfit*nrow(normalizedData)/44000) 
+    #normalizedData  <- copynumber(inputSegmented)
+    #combined        <- data.frame(featureNames(inputSegmented), chromosomes(inputSegmented), bpstart(inputSegmented), copynumber(inputSegmented),
+    #segmented(inputSegmented))
+    bw <- round(20*minlsforfit*nrow(copynumber(inputSegmented))/44000) 
+    ncolscl     <- ncol(copynumber(inputSegmented))
+  #  datareg     <- CGHcall:::.MakeData(data.frame(featureNames(inputSegmented), chromosomes(inputSegmented), bpstart(inputSegmented), copynumber(inputSegmented), segmented(inputSegmented)))  
+    whna <- !is.na(chromosomes(inputSegmented)) & !is.na(featureNames(inputSegmented))
+    datmat <- cbind(copynumber(inputSegmented), segmented(inputSegmented))[whna,]
+    posit       <- bpstart(inputSegmented)[whna]
+    chr         <- chromosomes(inputSegmented)[whna]
+    naam        <- featureNames(inputSegmented)[whna]
+    rm(whna,inputSegmented);gc()
+    nc    <- ncol(datmat)/2 
+    nclone <-nrow(datmat)
+    datareg  <- .MakeData(datmat[,-(1:nc)],chr)  
+   
+    #rm(combined); 
     
-    datareg     <- CGHcall:::.MakeData(combined)            
+    gc() #added 24/11/2009
+              
     #datareg <- .MakeData(combined)
     #save(datareg,file="datareg.Rdata")
     #load("datareg.Rdata")
-    posit       <- datareg[[1]][,3]
-    chr         <- datareg[[1]][,2]
-    naam        <- datareg[[1]][,1]
-    dataprob    <- data.frame(naam, chr, posit)
-    nc          <- (ncol(datareg[[1]])-3)/2
+     dataprob    <- data.frame(naam, chr, posit)
+    
+ 
     
     ## Determine method for prior probabilities
     if (prior == 'auto') {
@@ -36,10 +56,10 @@ CGHcall <- function(inputSegmented, prior="auto", nclass=3, organism="human", ro
     
     ### Convert to chromosome arm if neccessary
     if (prior != "all" && organism == "human") {
-        temp            <- datareg[[1]];
-        datareg[[1]]    <- CGHcall:::.convertChromosomeToArm(temp); 
+       # temp            <- datareg[[1]];
+        dataprob    <- CGHcall:::.convertChromosomeToArm(dataprob); 
        # datareg[[1]]    <- .convertChromosomeToArm(temp);
-        chr <- datareg[[1]][,2] #BUG;repaired 22/06/09
+        chr <- dataprob[,2] #BUG;repaired 22/06/09
     }
 
     cat("EM algorithm started ... \n");
@@ -60,12 +80,16 @@ CGHcall <- function(inputSegmented, prior="auto", nclass=3, organism="human", ro
 #    nclonesj <- 0
     thr <- 2
    
-    #here is the selection of regions used for fitting. First select regions long enough and with smoothed signal <= thr. Then, maximize #regions per prof to maxseg
+    #here is the selection of regions used for fitting. First select regions long enough and with smoothed signal <= thr. Then, maximize 
+    #regions per prof to maxseg
     #nc<-2
+    gc() 
+    datall <- as.vector(datmat[,1:nc]) #changed 16/7/10
+    datsmall      <- as.vector(datmat[,-(1:nc)])
+    rm(datmat);gc();
+  
     for (j in (1:nc)) {
-        datall        <- c(datall, datareg[[1]][,(3+j)])
-        datsmall       <- c(datsmall, datareg[[1]][,(3+nc+j)])
-        regions1    <- datareg[[2]][[j]]
+        regions1    <- datareg[[j]]
         nreg1       <- nrow(regions1)
         profileall     <- c(profileall, rep(j,nreg1))
         regionsall     <- rbind(regionsall, regions1)
@@ -81,6 +105,7 @@ CGHcall <- function(inputSegmented, prior="auto", nclass=3, organism="human", ro
         newregions[[j]] <- regions2
         }
         fracforfit <- min(1,nsegfit/countreg)
+        
         
         for (j in (1:nc)) {
         regions2 <- newregions[[j]]
@@ -104,6 +129,7 @@ CGHcall <- function(inputSegmented, prior="auto", nclass=3, organism="human", ro
         regionsdat  <- rbind(regionsdat, regions2d[,-(3:4)]+toadd) #delete smrat value and index
         #        nclonesj <- sum((regions2d[,2]+1)-regions2d[,1]) 
     }
+    gc()
 
     takechr     <- function(reg, chrom) {
         chrom[reg[1]]
@@ -122,6 +148,8 @@ CGHcall <- function(inputSegmented, prior="auto", nclass=3, organism="human", ro
     lev         <- 1:nc
     varprofnc   <- cbind(varregall, profile, allnc)
     varprof     <- sapply(lev, CGHcall:::.varproffun, vcnmat=varprofnc, profile=profile)
+    
+    gc()
 
     selk <- function(k, varprof,prof) {  #changed 22/06/09
         profk <- prof[k]
@@ -155,7 +183,10 @@ CGHcall <- function(inputSegmented, prior="auto", nclass=3, organism="human", ro
     iter        <- 1
     thrpara     <- 0.015 #changed 15/6/09
     
+    gc()
+    
     while (stop == 0 & iter <= maxiter) {
+        print(gc())
         cat("Calling iteration", iter, ":\n")
         posterior0  <- sapply(1:nreg, CGHcall:::.posteriorp, priorp=alpha0, pm=bstart, varprofall=varprofall, allsum=allsum, allsumsq=allsumsq, allnc=allnc,robustsig=robustsig)
         likprev     <- CGHcall:::.totallik(bstart, nreg=nreg, posteriorprev=posterior0, alphaprev=alpha0, varprofall=varprofall, allsum=allsum, allsumsq=allsumsq, allnc=allnc,robustsig=robustsig)
@@ -182,8 +213,11 @@ CGHcall <- function(inputSegmented, prior="auto", nclass=3, organism="human", ro
         if (max(abs(param[c(2:4,8)]-paramprev[c(2:4,8)])) <= thrpara) stop <- 1 #changed 15/6/09; also sdn should converge
         iter <- iter+1
     }
-    
-    cat("EM algorithm done ...\n")
+   # pm <- as.vector(printmat)
+#    plot(function(x) dnorm(x,mean=pm[4],sd=pm[11]),-1,1,col="red")
+#   plot(function(x) dnorm(x,mean=pm[5],sd=pm[12]),-1,1,col="black",add=TRUE)
+#   plot(function(x) dnorm(x,mean=pm[6],sd=pm[13]),-1,1,col="green",add=TRUE)
+#    cat("EM algorithm done ...\n")
     best            <- bstart
     
     #now start computing posteriors for ALL data
@@ -198,13 +232,13 @@ CGHcall <- function(inputSegmented, prior="auto", nclass=3, organism="human", ro
     varprofncall   <- cbind(varregallall, profileall, allncall)
     varprof_all     <- sapply(lev, CGHcall:::.varproffun, vcnmat=varprofncall, profile=profileall)
     varprof_allall <- sapply(1:nregall, selk, varprof=varprof_all,prof=profileall)
-
+    gc()
     
     if(prior!="all"){
     chrarm_alpha0 <- cbind(chrarmreg,alpha0)
     chrarm_alpha0uni <- unique(chrarm_alpha0) 
     chrarmregall   <- as.vector(apply(as.matrix(regionsall), 1, takechr, chrom=chr))
-    alpha0_all      <- t(sapply(chrarmregall,function(x){chrarm_alpha0uni[chrarm_alpha0uni[,1]==x,-1]}))
+    alpha0_all      <- t(sapply(chrarmregall,function(x){chrarm_alpha0uni[chrarm_alpha0uni[,1]==x,-1]})) 
     } else alpha0_all <- matrix(rep(alpha0[1,],nregall),byrow=T,nrow=nregall)
     
     posteriorfin    <- t(sapply(1:nregall, CGHcall:::.posteriorp, priorp=alpha0_all, pm=best, varprofall=varprof_allall, allsum=allsumall, allsumsq=allsumsqall, allnc=allncall, robustsig=robustsig))
@@ -215,20 +249,41 @@ CGHcall <- function(inputSegmented, prior="auto", nclass=3, organism="human", ro
         if (row[6] >= 0.5) return(c(row[1]+row[2], row[3], row[4]+row[5], row[6]))
         else return(c(row[1]+row[2], row[3], row[4]+row[5], row[6]))
     }
-
-    #if(length(toolargeseg) >= 0) {for(i in toolargeseg){
-#    if(allmeanold[i] < 0) {posteriorfin[i,] <- c(1,0,0,0,0,0)} else {posteriorfin[i,] <- c(0,0,0,0,0,1)}}}
-#    
+   
     if (nclass == 3) posteriorfin1 <- cbind(posteriorfin[,1]+posteriorfin[,2], posteriorfin[,3], posteriorfin[,4]+posteriorfin[,5]+posteriorfin[,6], posteriorfin[,6])
     if (nclass == 4) posteriorfin1 <- t(apply(posteriorfin, 1, amporgain))
 
     posteriorfin2   <- cbind(profileall, posteriorfin1)
+    rm(posteriorfin,posteriorfin1);gc() #added24/11/2009
     regionsprof     <- cbind(profileall, regionsall)
-    dataprob        <- data.frame(naam, chr, posit)
+    listcall <- list(posteriorfin2,nclone,nc,nclass,regionsprof)
+    #save(listcall,file="listcall.Rdata")
+    gc()
+    timeFinished <- round((proc.time() - timeStarted)[1] / 60)
+    cat("Total time:", timeFinished, "minutes\n")
+    return(listcall)
+    }
+    
 
-    for (k in (1:nc)) {
-        post        <- (posteriorfin2[profileall==k,])[,-1]
-        regionsk    <- (regionsprof[profileall==k,])[,-1]
+ExpandCGHcall <- function(listcall,inputSegmented, digits=3,divide=4, memeff = FALSE, fileoutpre="Callobj_"){
+  timeStarted <- proc.time()
+  posteriorfin2 <- listcall[[1]];nclone<-listcall[[2]];nctot <- listcall[[3]];nclass <- listcall[[4]];regionsprof<-listcall[[5]]
+  #digits=3;divide=4; memeff = FALSE; fileoutpre="Callobj_"
+  copynumber(inputSegmented)<-round(copynumber(inputSegmented),digits)
+  segmented(inputSegmented)<-round(segmented(inputSegmented),digits)
+  if (divide > nctot) divide <- nctot
+  nperturn <- floor(nctot/divide)
+  
+  for(part in 1:divide){
+    print(part)
+    if (part < divide) whprof <- ((part-1)*nperturn+1):(part*nperturn) else whprof <- ((part-1)*nperturn+1):nctot
+    IS <- inputSegmented[,whprof]
+    nc <- length(whprof)
+    dataprob<-array(0,c(nclone,nclass*nc))
+    print(gc())
+     for (k in 1:nc) {
+        post        <- (posteriorfin2[posteriorfin2[,1]==whprof[k],])[,-1]
+        regionsk    <- (regionsprof[regionsprof[,1]==whprof[k],])[,-1]
         nregk       <- nrow(post)
         probs       <- c()
         for (i in (1:nregk)) {
@@ -236,36 +291,23 @@ CGHcall <- function(inputSegmented, prior="auto", nclass=3, organism="human", ro
             togeth  <- post[i,(1:nclass)]
             probs   <- c(probs,rep(togeth,regl))
         }
+        probs <- round(probs,digits)
         allprobs    <- matrix(probs, ncol=nclass, byrow=TRUE)
-        datk        <- datareg[[1]][,(3+k)]
-        dataprob    <- data.frame(dataprob, datk, allprobs)
+      #  datk        <- datareg[[1]][,k]
+        dataprob[,(nclass*(k-1)+1):(nclass*k)] <- allprobs
+        rm(probs,post,regionsk,togeth);print(gc())
     }
-    
-    ### Add column names
-    info        <- c("Name", "Chromosome", "Position")
-    samplenames <- sampleNames(inputSegmented)
-    col.names   <- rep(samplenames, each=nclass+1)
-    
-    paste.stuff <- c("log2ratio", "loss", "normal", "gain")
-    if (nclass == 4) paste.stuff <- c(paste.stuff, "amplification")
-    
-    col.names   <- paste(paste.stuff, col.names, sep="_")
-    col.names   <- c(info, col.names)
-    
-    colnames(dataprob) <- col.names
-    
-    ### Define calls from probabilities
-    ncpp        <- nclass+1
-    nclone      <- nrow(dataprob)
-    ncolscl     <- ncol(normalizedData)
-    classify.res        <- array(NA,c(nclone,ncolscl))
+    print(gc())
+   
+    #ncolscl     <- ncol(normalizedData) #25/11/09 moved upward for efficiency reasons
+    classify.res        <- array(NA,c(nclone,nc))
     for (i in 1:nc) {
-        genomdat        <- dataprob[,(3+ncpp*(i-1)+1)]
-        prob.loss.ind   <- dataprob[,(3+ncpp*(i-1)+2)]
-        prob.none.ind   <- dataprob[,(3+ncpp*(i-1)+3)]
-        prob.gain.ind   <- dataprob[,(3+ncpp*(i-1)+4)]
+   #     genomdat        <- dataprob[,(ncpp*(i-1)+1)] #removed 16/7/10
+        prob.loss.ind   <- dataprob[,(nclass*(i-1)+1)]
+        prob.none.ind   <- dataprob[,(nclass*(i-1)+2)]
+        prob.gain.ind   <- dataprob[,(nclass*(i-1)+3)]
         if (nclass==4) {
-            prob.amp.ind    <- dataprob[,(3+ncpp*(i-1)+5)]
+            prob.amp.ind    <- dataprob[,(nclass*(i-1)+4)]
             ticksamp        <- which(prob.amp.ind >= 0.5)
             lt              <- length(ticksamp)
         }        
@@ -279,51 +321,42 @@ CGHcall <- function(inputSegmented, prior="auto", nclass=3, organism="human", ro
             classify.res[(1:nclone),i] <- (as.numeric(prob.amp.ind>0.5)+1)*(2*(as.numeric(prob.gain.amp>prob.loss.ind))-1)*(as.numeric(apply(cbind(prob.loss.ind,prob.gain.ind),1,max)>prob.none.ind))
         }              
     }
-    
-    ### Make result list
-    
-    splitProbs <- function(probs, nsample=nc, classes=nclass) {
-        probs   <- probs[,4:ncol(probs)]
-        count   <- classes+1
-        probloss <- c()
-        probnorm <- c()
-        probgain <- c()
-        probamp <- c()
-        for (i in 0:(nsample-1)) {
-            probloss <- cbind(probloss, probs[,i*count+2])
-            probnorm <- cbind(probnorm, probs[,i*count+3])
-            probgain <- cbind(probgain, probs[,i*count+4])
-            if (nclass==4) probamp <- cbind(probamp, probs[,i*count+5])
-        }
-        if (nclass == 3) result  <- list(loss=probloss, normal=probnorm, gain=probgain)
-        else if (nclass == 4) result  <- list(loss=probloss, normal=probnorm, gain=probgain, amp=probamp)
-        result
+    print(gc())
+    ncolprob <- ncol(dataprob)
+    neworder<-as.vector(sapply(1:nclass,function(x)seq(x,ncolprob,by=nclass)))
+    dataprob   <- dataprob[,neworder]
+    calls       <- CGHcall:::.assignNames(classify.res, IS)
+    rm(classify.res);print(gc());
+    probloss <- CGHcall:::.assignNames(dataprob[,1:nc,drop=FALSE], IS)
+    dataprob <- dataprob[,-(1:nc),drop=FALSE]
+    print(gc())
+    probnorm <- CGHcall:::.assignNames(dataprob[,1:nc,drop=FALSE], IS)
+    dataprob <- dataprob[,-(1:nc),drop=FALSE]
+    print(gc())
+    probgain <- CGHcall:::.assignNames(dataprob[,1:nc,drop=FALSE], IS)
+    dataprob <- dataprob[,-(1:nc),drop=FALSE]
+    print(gc())
+    if(nclass==4) probamp <- CGHcall:::.assignNames(dataprob[,1:nc,drop=FALSE], IS)
+    rm(dataprob);print(gc())
+    if (nclass == 3) {assayData <-assayDataNew(copynumber=copynumber(IS),segmented=segmented(IS),calls=calls,probloss=probloss,probnorm=probnorm,probgain=probgain,probamp=probamp)} else {
+    assayData <-assayDataNew(copynumber=copynumber(IS),segmented=segmented(IS),calls=calls,probloss=probloss,probnorm=probnorm,probgain=probgain) }
+    rm(probloss,probnorm,probgain); if(nclass==4) rm(probamp);
+    print(gc())
+   
+    result0  <- CGHcall:::.callFromSeg(IS, assayData)  
+    if(!memeff){  
+        if (part==1) {result <- result0} else {
+                result <- combine(result,result0)  
+                }
+        } else {
+        fileout <- paste(fileoutpre,"profiles",whprof[1],"to",whprof[length(whprof)],".Rdata",sep="")  
+        save(result0,file=fileout)
     }
-    
-    #allmeanold  <- allsumold/allnc  #include amplifications
-#    profmeannc  <- cbind(profile, allmeanold, regions)
-#    
-    probs       <- splitProbs(dataprob)
-    
-    if (nclass == 3) assayData <- assayDataNew( copynumber  = round(copynumber(inputSegmented),digits),
-                                                segmented   = round(segmented(inputSegmented),digits),
-                                                calls       = CGHcall:::.assignNames(classify.res, inputSegmented), 
-                                                probloss    = CGHcall:::.assignNames(round(probs$loss,digits), inputSegmented), 
-                                                probnorm    = CGHcall:::.assignNames(round(probs$normal,digits), inputSegmented), 
-                                                probgain    = CGHcall:::.assignNames(round(probs$gain,digits), inputSegmented)
-                                                ) else if (nclass == 4) assayData <- assayDataNew(copynumber  = round(copynumber(inputSegmented),digits),
-                                                    segmented   = round(segmented(inputSegmented),digits),
-                                                    calls       = CGHcall:::.assignNames(classify.res, inputSegmented), 
-                                                    probloss    = CGHcall:::.assignNames(round(probs$loss,digits), inputSegmented), 
-                                                    probnorm    = CGHcall:::.assignNames(round(probs$normal,digits), inputSegmented), 
-                                                    probgain    = CGHcall:::.assignNames(round(probs$gain,digits), inputSegmented),
-                                                    probamp     = CGHcall:::.assignNames(round(probs$amp,digits), inputSegmented)
-                                                    )
-                                                            
-    result  <- CGHcall:::.callFromSeg(inputSegmented, assayData)                                                            
+    rm(assayData,result0);print(gc())
+    }
     
     cat("FINISHED!\n")
     timeFinished <- round((proc.time() - timeStarted)[1] / 60)
     cat("Total time:", timeFinished, "minutes\n")
-    result
+    if (memeff) print("Results printed to separate files") else return(result)
 }

@@ -24,13 +24,13 @@
 \description{
   Container for aCGH data and experimental
   metadata. \code{cghSeg} class is derived from
-  \code{\link[Biobase:class.eSet]{eSet}}, and requires a matrix named \code{copynumber} as well as a 
+  \code{\link[Biobase]{eSet}}, and requires a matrix named \code{copynumber} as well as a 
   matrix named \code{segmented} as assayData members of equal dimensions. 
   Furthermore, columns named \code{Chromosome}, \code{Start}, and \code{End} are 
   required as featureData members, containing feature position information.
 }
 \section{Extends}{
-   Directly extends class \code{\link[Biobase:class.eSet]{eSet}}.
+   Directly extends class \code{\link[Biobase]{eSet}}.
 }
 \section{Creating Objects}{
 
@@ -57,58 +57,45 @@
     \code{copynumber} and \code{segmented} with rows represening array probes
     and columns representing samples. Additional matrices of
     identical size (e.g., representing measurement errors) may
-    also be included in
-    \code{assayData}. Class:\code{\link[Biobase:class.AssayData]{AssayData-class}}}  
-      \item{\code{phenoData}:}{See \code{\link[Biobase:class.eSet]{eSet}}}
-      \item{\code{featureData}:}{An
-	\code{\link[Biobase:class.AnnotatedDataFrame]{AnnotatedDataFrame}}
-	with columns 
-    \code{Chromosome}, \code{Start}, and \code{End} containing array
-    element position  
+    also be included in \code{assayData}. Class:\code{\link[Biobase]{AssayData-class}}}
+      \item{\code{phenoData}:}{See \code{\link[Biobase]{eSet}}}
+      \item{\code{featureData}:}{An \code{\link[Biobase]{AnnotatedDataFrame}} with columns
+    \code{Chromosome}, \code{Start}, and \code{End} containing array element position 
     data.}
-      \item{\code{experimentData}:}{See
-	\code{\link[Biobase:class.eSet]{eSet}}} 
-      \item{\code{annotation}:}{See \code{\link[Biobase:class.eSet]{eSet}}}
+      \item{\code{experimentData}:}{See \code{\link[Biobase]{eSet}}}
+      \item{\code{annotation}:}{See \code{\link[Biobase]{eSet}}}
   }
 }
 \section{Methods}{
 
   Class-specific methods.
   \describe{
-     \item{\code{copynumber(cghSeg)},
-       \code{copynumber(cghSeg,matrix)<-}}{Access and 
+     \item{\code{copynumber(cghSeg)}, \code{copynumber(cghSeg,matrix)<-}}{Access and
        set elements named \code{copynumber} in the \code{AssayData-class}
        slot.}
-     \item{\code{segmented(cghSeg)},
-       \code{segmented(cghSeg,matrix)<-}}{Access and 
+     \item{\code{segmented(cghSeg)}, \code{segmented(cghSeg,matrix)<-}}{Access and
        set elements named \code{segmented} in the \code{AssayData-class}
-       slot.} 
-     \item{\code{chromosomes}, \code{bpstart}, \code{bpend}}{Access the
-       chromosomal positions stored in \code{featureData}} 
-     \item{plot}{Create a plot containing log2ratios and segments
-       ordered by chromosomal position. TWO EXTRA OPTIONS PLUS DEFAULTS:
-     
-     dotres=10. Every dotres-th log2-ratio is plotted. dotres=1 plots
-     all data. However, higher values save a lot of space and  
-     allow quicker browsing of the plots. ylimit=c(-2,5): limits of the
-     y-axis} 
+       slot.}
+     \item{\code{chromosomes}, \code{bpstart}, \code{bpend}}{Access the chromosomal positions stored in \code{featureData}}
+     \item{plot}{Create a plot containing log2ratios and segments ordered by chromosomal position. TWO EXTRA OPTIONS PLUS DEFAULTS: 
+     dotres=10. Every dotres-th log2-ratio is plotted. dotres=1 plots all data. However, higher values save a lot of space and 
+     allow quicker browsing of the plots. ylimit=c(-2,5): limits of the y-axis}
     }
 
-   See \code{\link[Biobase:class.eSet]{eSet}} for derived methods.   
+   See \code{\link[Biobase]{eSet}} for derived methods.   
 }
 
 \author{Sjoerd Vosse}
 
 \seealso{
-  \code{\link[Biobase:class.eSet]{eSet-class}},
-  \code{\link{cghRaw-class}}, \code{\link{cghCall-class}} 
+  \code{\link[Biobase]{eSet-class}}, \code{\link{cghRaw-class}}, \code{\link{cghCall-class}}
 }
 
 \examples{
 # create an instance of cghSeg
 new("cghSeg")
 
-# create an instance of cghSeg through 'segmentData'
+# create an instance of cghSeg through \code{segmentData}
 \dontrun{
    data(Wilting)
    rawcgh <- make_cghSeg(Wilting)

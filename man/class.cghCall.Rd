@@ -35,8 +35,7 @@
 \description{
   Container for aCGH data and experimental
   metadata. \code{cghCall} class is derived from
-  \code{\link[Biobase:class.eSet]{eSet}}, and requires the following
-  matrices of equal dimension 
+  \code{\link[Biobase]{eSet}}, and requires the following matrices of equal dimension
   as assayData members:
   \itemize{
     \item \code{copynumber}
@@ -50,7 +49,7 @@
   required as featureData members, containing feature position information.
 }
 \section{Extends}{
-   Directly extends class \code{\link[Biobase:class.eSet]{eSet}}.
+   Directly extends class \code{\link[Biobase]{eSet}}.
 }
 \section{Creating Objects}{
 
@@ -89,17 +88,13 @@
     with rows represening array probes
     and columns representing samples. Additional matrices of
     identical size (e.g., representing measurement errors) may
-    also be included in
-    \code{assayData}. Class:\code{\link[Biobase:class.AssayData]{AssayData-class}} }
-      \item{\code{phenoData}:}{See \code{\link[Biobase:class.eSet]{eSet}}}
-      \item{\code{featureData}:}{An
-	\code{\link[Biobase:class.AnnotatedDataFrame]{AnnotatedDataFrame}}
-	with columns 
+    also be included in \code{assayData}. Class:\code{\link[Biobase]{AssayData-class}}}
+      \item{\code{phenoData}:}{See \code{\link[Biobase]{eSet}}}
+      \item{\code{featureData}:}{An \code{\link[Biobase]{AnnotatedDataFrame}} with columns
     \code{Chromosome}, \code{Start}, and \code{End} containing array element position 
     data.}
-      \item{\code{experimentData}:}{See
-	\code{\link[Biobase:class.eSet]{eSet}}} 
-      \item{\code{annotation}:}{See \code{\link[Biobase:class.eSet]{eSet}}}
+      \item{\code{experimentData}:}{See \code{\link[Biobase]{eSet}}}
+      \item{\code{annotation}:}{See \code{\link[Biobase]{eSet}}}
   }
 }
 \section{Methods}{
@@ -132,27 +127,27 @@
      \item{plot.summary}{Create a plot summarizing the call probabilities of all samples}
     }
 
-   See \code{\link[Biobase:class.eSet]{eSet}} for derived methods.   
+   See \code{\link[Biobase]{eSet}} for derived methods.   
 }
 
 \author{Sjoerd Vosse}
 
 \seealso{
-  \code{\link[Biobase:class.eSet]{eSet-class}},
-  \code{\link{cghRaw-class}}, \code{\link{cghSeg-class}} 
+  \code{\link[Biobase]{eSet-class}}, \code{\link{cghRaw-class}}, \code{\link{cghSeg-class}}
 }
 
 \examples{
 # create an instance of cghCall
 new("cghCall")
 
-# create an instance of cghCall through CGHcall
+# create an instance of cghCall through \code{\link{ExpandCGHcall}}
 \dontrun{
    data(Wilting)
    rawcgh <- make_cghSeg(Wilting)
    normalized <- normalize(rawcgh)
    segmented <- segmentData(normalized)
-   called <- CGHcall(segmented)
+   listcalled <- CGHcall(segmented)
+   called <- ExpandCGHcall(listcalled,segmented)
 
    # plot the first sample. Default only every 10th log2-ratio is plotted (dotres=10). Adjust using dotres= option below. 
    plot(called[,1])

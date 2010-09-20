@@ -10,11 +10,6 @@ make_cghRaw <- function(input) {
 }
 
 preprocess <- function(input, maxmiss=30, nchrom=23, ...) {
-    #input <- cgh
-    ## Version 2.0
-    ## Author: Sjoerd Vosse
-    ## Email: s.vosse@vumc.nl
-    ## Date: 23-10-2007
     
     ## Changes since previous version
     ## - input is of class cghRaw
@@ -26,6 +21,8 @@ preprocess <- function(input, maxmiss=30, nchrom=23, ...) {
     ## - It imputes missing values using knnimpute
 
     ## Delete data with unknown position or chromosome number
+    
+    #input <- raw;maxmiss<-30;nchrom=23
     input   <- input[!is.na(chromosomes(input)) & !is.na(bpstart(input))];
     input   <- input[chromosomes(input) != 0 & bpstart(input) != 0,];
     
@@ -38,19 +35,37 @@ preprocess <- function(input, maxmiss=30, nchrom=23, ...) {
         return(FALSE);
     }
     
-    allowed     <- ncol(input) * maxmiss / 100;
-    filter      <- apply(copynumber(input), 1, countMissing, allowed);
-    input       <- input[filter,]
     
+    nummis <- length(copynumber(input)[is.na(copynumber(input))]) #added 24/11/2009; filter and impute only when necessary
+    if(nummis > 0) {
+         allowed     <- ncol(input) * maxmiss / 100;
+         filter      <- apply(copynumber(input), 1, countMissing, allowed);
+         input       <- input[filter,]
+   
     ## Impute data using impute.knn from package 'impute'
-    if (!exists("k")) k <- 10
-    new.k       <- ceiling((1 - maxmiss / 100) * ncol(input))
-    new.k       <- min(new.k, k)
-    if (new.k != 10) cat("Changing impute.knn parameter k from", k, "to", new.k, "due to small sample size.\n")
-    if(new.k>1){    #Changed 15/5/09: impute only when at least 2 data columns
-        result      <- impute::impute.knn(copynumber(input), k=new.k, ...);
-        copynumber(input) <- CGHcall:::.assignNames(result$data, input)
-    }
+            if (!exists("k")) k <- 10
+            new.k       <- ceiling((1 - maxmiss / 100) * ncol(input))
+            new.k       <- min(new.k, k)
+            if (new.k != 10) cat("Changing impute.knn parameter k from", k, "to", new.k, "due to small sample size.\n")
+            if(new.k>1){    #Changed 15/5/09: impute only when at least 2 data columns; changed 24/11/09: do imputation in 100 batches    
+                nrows <- nrow(copynumber(input))
+                nrpi <- floor(nrows/100)
+                resultsall <- c()
+                for(i in 1:(100-1)){
+                datforimp <- copynumber(input)[((i-1)*nrpi+1):(nrpi*i),]
+                result      <- impute::impute.knn(datforimp, k=new.k);
+                resultsall <- rbind(resultsall,result$data)
+                }
+                datforimp <- copynumber(input)[((100-1)*nrpi+1):nrows,] #last one could be a little longer than nrpi
+                result      <- impute::impute.knn(datforimp, k=new.k);
+                resultsall <- rbind(resultsall,result$data)
+                copynumber(input) <- CGHcall:::.assignNames(resultsall, input)
+                
+               # result      <- impute::impute.knn(copynumber(input), k=new.k, ...);
+#                copynumber(input) <- CGHcall:::.assignNames(result$data, input)
+            }
+            
+        }
     input    
 }
 
