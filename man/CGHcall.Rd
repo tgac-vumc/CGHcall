@@ -36,7 +36,7 @@ CGHcall(inputSegmented, prior = "auto", nclass = 4, organism = "human", robustsi
   \item{posteriorfin2}{Matrix containing call probabilities for each segment. First column denotes profile number, followed by k columns with aberration probabilities for each sample, where k is the number of levels used for calling (\code{nclass}).}
   \item{nclone }{Number of clone or probes}
   \item{nc}{Number of samples}
-  \item{Number of classes used}
+  \item{}{Number of classes used}
   \item{regionsprof}{Matrix containing information about the segments, 4 colums: profile, start probe, end probe, segmented value}
 
 }

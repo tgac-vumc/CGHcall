@@ -5,10 +5,10 @@
   This function normalizes arrayCGH data after segmentation in order to find a better 0-level. 
   }
 \usage{
-postsegnormalize(input, inter=c(-0.1,0.1))
+postsegnormalize(segmentData, inter=c(-0.1,0.1))
 }
 \arguments{
-  \item{input}{ Object of class \code{\link{cghSeg}}. }
+  \item{segmentData}{ Object of class \code{\link{cghSeg}}. }
  \item{inter}{Interval in which the function should search for the normal level.}
  }
 \details{
