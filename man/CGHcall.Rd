@@ -5,7 +5,7 @@
   Calls aberrations for array CGH data using a six state mixture model.
 }
 \usage{
-CGHcall(inputSegmented, prior = "auto", nclass = 3, organism = "human", robustsig="yes", nsegfit=3000, maxnumseg=100, minlsforfit=0.5)
+CGHcall(inputSegmented, prior = "auto", nclass = 4, organism = "human", robustsig="yes", nsegfit=3000, maxnumseg=100, minlsforfit=0.5)
 }
 \arguments{
   \item{inputSegmented}{ An object of class \code{\link{cghSeg}} }
