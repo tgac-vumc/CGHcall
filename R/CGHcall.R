@@ -1,4 +1,4 @@
-CGHcall <- function(inputSegmented, prior="auto", nclass=3, organism="human", robustsig="yes",nsegfit=3000,maxnumseg=100,minlsforfit=0.5) {
+CGHcall <- function(inputSegmented, prior="auto", nclass=4, organism="human", robustsig="yes",nsegfit=3000,maxnumseg=100,minlsforfit=0.5) {
   #  library(CGHcall)
 #    setwd("C:\\VUData\\Maria")
 #    #rm(list=ls())
@@ -338,7 +338,7 @@ ExpandCGHcall <- function(listcall,inputSegmented, digits=3,divide=4, memeff = F
     print(gc())
     if(nclass==4) probamp <- CGHcall:::.assignNames(dataprob[,1:nc,drop=FALSE], IS)
     rm(dataprob);print(gc())
-    if (nclass == 3) {assayData <-assayDataNew(copynumber=copynumber(IS),segmented=segmented(IS),calls=calls,probloss=probloss,probnorm=probnorm,probgain=probgain,probamp=probamp)} else {
+    if (nclass == 4) {assayData <-assayDataNew(copynumber=copynumber(IS),segmented=segmented(IS),calls=calls,probloss=probloss,probnorm=probnorm,probgain=probgain,probamp=probamp)} else {
     assayData <-assayDataNew(copynumber=copynumber(IS),segmented=segmented(IS),calls=calls,probloss=probloss,probnorm=probnorm,probgain=probgain) }
     rm(probloss,probnorm,probgain); if(nclass==4) rm(probamp);
     print(gc())

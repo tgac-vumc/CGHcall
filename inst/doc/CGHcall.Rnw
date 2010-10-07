@@ -21,7 +21,7 @@
 \maketitle
 
 \begin{center}
-Department of Pathology\\
+Department of Epidemiology \& Biostatistics\\
 VU University Medical Center
 \end{center}
 
@@ -75,10 +75,22 @@ norm.cghdata <- norm.cghdata[,1:2]
 seg.cghdata <- segmentData(norm.cghdata, method="DNAcopy")
 @
 
+Post-segmentation normalization allows to better set the zero level after segmentation
+
+<<echo=TRUE,print=FALSE>>=
+postseg.cghdata <- postsegnormalize(seg.cghdata)
+@
+
 Now that the data have been normalized and segments have been defined, we need to determine which segments should be classified as losses, normal, gains or amplifications.
 
 <<echo=TRUE,print=FALSE>>=
-result <- CGHcall(seg.cghdata)
+result <- CGHcall(postseg.cghdata)
+@
+
+In CGHcall version >=2.9.0 the result of CGHcall needs to be converted to a call object. This can be a large object for large arrays. 
+
+<<echo=TRUE,print=FALSE>>=
+result <- ExpandCGHcall(result,postseg.cghdata)
 @
 
 \pagebreak
@@ -104,7 +116,7 @@ Alternatively, we can create a summary plot of all the samples:
 
 \begin{center}
 <<fig=TRUE,echo=TRUE>>=
-summaryPlot(result)
+plot.summary(result)
 @
 \end{center}
 
