@@ -166,9 +166,9 @@ function (x, y, ... )
     
 })
 
-setMethod("chromosomes", "cghCall", function(object) pData(featureData(object))[,"Chromosome"])
-setMethod("bpstart", "cghCall", function(object) pData(featureData(object))[,"Start"])
-setMethod("bpend", "cghCall", function(object) pData(featureData(object))[,"End"])
+setMethod("chromosomes", signature(object="cghCall"), function(object) pData(featureData(object))[,"Chromosome"])
+setMethod("bpstart", signature(object="cghCall"), function(object) pData(featureData(object))[,"Start"])
+setMethod("bpend", signature(object="cghCall"), function(object) pData(featureData(object))[,"End"])
 
 setMethod("copynumber", signature(object="cghCall"),
         function(object) Biobase:::assayDataElement(object, "copynumber"))

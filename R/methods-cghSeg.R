@@ -48,9 +48,9 @@ setValidity("cghSeg", function(object) {
     if (is.null(msg)) TRUE else msg
 })
 
-setMethod("chromosomes", "cghSeg", function(object) pData(featureData(object))[,"Chromosome"])
-setMethod("bpstart", "cghSeg", function(object) pData(featureData(object))[,"Start"])
-setMethod("bpend", "cghSeg", function(object) pData(featureData(object))[,"End"])
+setMethod("chromosomes", signature(object="cghSeg"), function(object) pData(featureData(object))[,"Chromosome"])
+setMethod("bpstart", signature(object="cghSeg"), function(object) pData(featureData(object))[,"Start"])
+setMethod("bpend", signature(object="cghSeg"), function(object) pData(featureData(object))[,"End"])
 
 setMethod("copynumber", signature(object="cghSeg"),
         function(object) Biobase:::assayDataElement(object, "copynumber"))
