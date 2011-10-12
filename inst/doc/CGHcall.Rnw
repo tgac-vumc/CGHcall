@@ -116,7 +116,7 @@ Alternatively, we can create a summary plot of all the samples:
 
 \begin{center}
 <<fig=TRUE,echo=TRUE>>=
-plot.summary(result)
+summaryPlot(result)
 @
 \end{center}
 

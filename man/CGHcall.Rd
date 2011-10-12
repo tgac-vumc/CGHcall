@@ -49,7 +49,7 @@ CGHcall(inputSegmented, prior = "auto", nclass = 4, organism = "human", robustsi
 \author{ Sjoerd Vosse & Mark van de Wiel }
 \examples{
   data(Wilting)
-  ## Convert to \code{\link{cghRaw}} object
+  ## Convert to cghRaw object
   cgh <- make_cghRaw(Wilting)
   print(cgh)
   ## First preprocess the data
