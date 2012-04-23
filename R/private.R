@@ -19,6 +19,196 @@
     result
 }
 
+######## COPIED FROM DNACOPY, BUT ADAPTED TO ALLOW FOR TWO UNDO-PARAMETERS
+
+.segment2 <- function (x,clen=10, relSDlong=3, alpha = 0.01, nperm = 10000, p.method = c("hybrid", 
+    "perm"), min.width = 2, kmax = 25, nmin = 200, eta = 0.05, 
+    sbdry = NULL, trim = 0.025, undo.splits = c("none", "prune", 
+        "sdundo"), undo.prune = 0.05, undo.SD = 3, verbose = 1) 
+{
+    if (!inherits(x, "CNA")) 
+        stop("First arg must be a copy number array object")
+    call <- match.call()
+    if (min.width < 2 | min.width > 5) 
+     stop("minimum segment width should be between 2 and 5")
+    if (missing(sbdry)) {
+        if (nperm == 10000 & alpha == 0.01 & eta == 0.05) {
+            sbdry <- default.DNAcopy.bdry
+        }
+        else {
+            max.ones <- floor(nperm * alpha) + 1
+            sbdry <- DNAcopy:::getbdry(eta, nperm, max.ones)
+        }
+    }
+    sbn <- length(sbdry)
+    nsample <- ncol(x) - 2
+    sampleid <- colnames(x)[-(1:2)]
+    uchrom <- unique(x$chrom)
+    data.type <- attr(x, "data.type")
+    p.method <- match.arg(p.method)
+    undo.splits <- match.arg(undo.splits)
+    segres <- list()
+    segres$data <- x
+    allsegs <- list()
+    allsegs$ID <- NULL
+    allsegs$chrom <- NULL
+    allsegs$loc.start <- NULL
+    allsegs$loc.end <- NULL
+    allsegs$num.mark <- NULL
+    allsegs$seg.mean <- NULL
+    for (isamp in 1:nsample) {
+        if (verbose >= 1) 
+            cat(paste("Analyzing:", sampleid[isamp], "\n"))
+        genomdati <- x[, isamp + 2]
+        ina <- which(!is.na(genomdati) & !(abs(genomdati) == 
+            Inf))
+        genomdati <- genomdati[ina]
+        trimmed.SD <- sqrt(DNAcopy:::trimmed.variance(genomdati, trim))
+        chromi <- x$chrom[ina]
+        sample.lsegs <- NULL
+        sample.segmeans <- NULL
+        for (ic in uchrom) {
+            if (verbose >= 2) 
+                cat(paste("  current chromosome:", ic, "\n"))
+            segci <- .changepoints2(genomdati[chromi == ic], data.type, 
+                alpha, sbdry, sbn, nperm, p.method, min.width, 
+                kmax, nmin, trimmed.SD, undo.splits, undo.prune, 
+                undo.SD, clen, relSDlong, verbose)
+            sample.lsegs <- c(sample.lsegs, segci$lseg)
+            sample.segmeans <- c(sample.segmeans, segci$segmeans)
+        }
+        sample.nseg <- length(sample.lsegs)
+        sample.segs.start <- ina[cumsum(c(1, sample.lsegs[-sample.nseg]))]
+        sample.segs.end <- ina[cumsum(sample.lsegs)]
+        allsegs$ID <- c(allsegs$ID, rep(isamp, sample.nseg))
+        allsegs$chrom <- c(allsegs$chrom, x$chrom[sample.segs.end])
+        allsegs$loc.start <- c(allsegs$loc.start, x$maploc[sample.segs.start])
+        allsegs$loc.end <- c(allsegs$loc.end, x$maploc[sample.segs.end])
+        allsegs$num.mark <- c(allsegs$num.mark, sample.lsegs)
+        allsegs$seg.mean <- c(allsegs$seg.mean, sample.segmeans)
+    }
+    allsegs$ID <- sampleid[allsegs$ID]
+    allsegs$seg.mean <- round(allsegs$seg.mean, 4)
+    allsegs <- as.data.frame(allsegs)
+    allsegs$ID <- as.character(allsegs$ID)
+    segres$output <- allsegs
+    segres$call <- call
+    class(segres) <- "DNAcopy"
+    segres
+}
+
+
+.changepoints2 <- function (genomdat, data.type = "logratio", alpha = 0.01, sbdry, 
+    sbn, nperm = 10000, p.method = "hybrid", min.width = 2, kmax = 25, 
+    nmin = 200, trimmed.SD = NULL, undo.splits = "none", undo.prune = 0.05, 
+    undo.SD = 3, clen, relSDlong, verbose = 1, ngrid = 100, tol = 1e-06) 
+{
+    n <- length(genomdat)
+    if (missing(trimmed.SD)) 
+        trimmed.SD <- mad(diff(genomdat))/sqrt(2)
+    seg.end <- c(0, n)
+    k <- length(seg.end)
+    change.loc <- NULL
+    while (k > 1) {
+        current.n <- seg.end[k] - seg.end[k - 1]
+        if (verbose >= 3) 
+            cat(".... current segment:", seg.end[k - 1] + 1, 
+                "-", seg.end[k], "\n")
+        if (current.n >= 2 * min.width) {
+            current.genomdat <- genomdat[(seg.end[k - 1] + 1):seg.end[k]]
+            current.genomdat <- current.genomdat - mean(current.genomdat)
+            current.tss <- sum(current.genomdat^2)
+            hybrid <- FALSE
+            delta <- 0
+            if ((p.method == "hybrid") & (nmin < current.n)) {
+                hybrid <- TRUE
+                delta <- (kmax + 1)/current.n
+            }
+            zzz <- .Fortran("fndcpt", n = as.integer(current.n), 
+                x = as.double(current.genomdat), tss = as.double(current.tss), 
+                px = double(current.n), sx = double(current.n), 
+                nperm = as.integer(nperm), cpval = as.double(alpha), 
+                ncpt = integer(1), icpt = integer(2), ibin = as.logical(data.type == 
+                  "binary"), hybrid = as.logical(hybrid), al0 = as.integer(min.width), 
+                hk = as.integer(kmax), delta = as.double(delta), 
+                ngrid = as.integer(ngrid), sbn = as.integer(sbn), 
+                sbdry = as.integer(sbdry), tol = as.double(tol), 
+                PACKAGE = "DNAcopy")
+        }
+        else {
+            zzz <- list()
+            zzz$ncpt <- 0
+        }
+        if (zzz$ncpt == 0) 
+            change.loc <- c(change.loc, seg.end[k])
+        seg.end <- switch(1 + zzz$ncpt, seg.end[-k], c(seg.end[1:(k - 
+            1)], seg.end[k - 1] + zzz$icpt[1], seg.end[k]), c(seg.end[1:(k - 
+            1)], seg.end[k - 1] + zzz$icpt, seg.end[k]))
+        k <- length(seg.end)
+        if (verbose >= 3) 
+            cat(".... segments to go:", seg.end, "\n")
+    }
+    seg.ends <- rev(change.loc)
+    nseg <- length(seg.ends)
+    lseg <- diff(c(0, seg.ends))
+    if (nseg > 1) {
+        if (undo.splits == "prune") {
+            lseg <- changepoints.prune(genomdat, lseg, undo.prune)
+        }
+        if (undo.splits == "sdundo") {
+            lseg <- .changepoints.sdundo2(genomdat, lseg, trimmed.SD, 
+                undo.SD, clen, relSDlong)
+        }
+    }
+    segmeans <- 0 * lseg
+    ll <- uu <- 0
+    for (i in 1:length(lseg)) {
+        uu <- uu + lseg[i]
+        segmeans[i] <- mean(genomdat[(ll + 1):uu])
+        ll <- uu
+    }
+    list(lseg = lseg, segmeans = segmeans)
+}
+
+
+.changepoints.sdundo2 <- function (genomdat, lseg, trimmed.SD, change.SD = 3, clen, relSDlong) 
+{
+    change.SD <- trimmed.SD * change.SD
+    cpt.loc <- cumsum(lseg)
+    sdundo <- TRUE
+    while (sdundo) {
+        k <- length(cpt.loc)
+        if (k > 1) {
+            segments0 <- cbind(c(1, 1 + cpt.loc[-k]), cpt.loc)
+                segmed <- apply(segments0, 1, function(i, x) {
+                median(x[i[1]:i[2]])}, genomdat)
+            ens <- apply(segments0, 1, function(i, x) {i[2]+1-i[1]
+            }, genomdat)
+            el <- length(ens)
+            ens2 <- c(2,ens)
+            ens1 <- c(ens,2)
+            allens <- apply(cbind(ens1,ens2),1,function(ro) ifelse(min(ro[1],ro[2])>clen,relSDlong,1))[-c(1,(el+1))] 
+            
+            adsegmed <- abs(diff(segmed)*allens)
+            if (min(adsegmed) < change.SD) {
+                i <- which(adsegmed == min(adsegmed))
+                cpt.loc <- cpt.loc[-i]
+            }
+            else {
+                sdundo <- FALSE
+            }
+        }
+        else {
+            sdundo <- FALSE
+        }
+    }
+    lseg.sdundo <- diff(c(0, cpt.loc))
+    lseg.sdundo
+}
+
+######################################################################
+
+
 .assignNames <- function(matrix, object) {
     colnames(matrix) <- sampleNames(object)
     rownames(matrix) <- featureNames(object)
@@ -47,112 +237,7 @@
     if (is.null(msg)) TRUE else msg
 }
 
-.getCentromere <- function() {
-    ### Centromere data from http://genome.ucsc.edu
-    ### Database March 2006
-    ### Date: 11 september 2006
-    
-    centromere       <- matrix(NA, 23, 2);
-    centromere[1,1]  <- 121236957;    
-    centromere[1,2]  <- 123476957;
-    centromere[2,1]  <- 91689898;
-    centromere[2,2]  <- 94689898;
-    centromere[3,1]  <- 90587544;
-    centromere[3,2]  <- 93487544;
-    centromere[4,1]  <- 49354874;
-    centromere[4,2]  <- 52354874;
-    centromere[5,1]  <- 46441398; 
-    centromere[5,2]  <- 49441398;
-    centromere[6,1]  <- 58938125; 
-    centromere[6,2]  <- 61938125;
-    centromere[7,1]  <- 58058273; 
-    centromere[7,2]  <- 61058273;
-    centromere[8,1]  <- 43958052; 
-    centromere[8,2]  <- 46958052;
-    centromere[9,1]  <- 47107499; 
-    centromere[9,2]  <- 50107499;
-    centromere[10,1] <- 39244941; 
-    centromere[10,2] <- 41624941;
-    centromere[11,1] <- 51450781; 
-    centromere[11,2] <- 54450781;
-    centromere[12,1] <- 34747961; 
-    centromere[12,2] <- 36142961;
-    centromere[13,1] <- 16000000; 
-    centromere[13,2] <- 17868000;
-    centromere[14,1] <- 15070000; 
-    centromere[14,2] <- 18070000;
-    centromere[15,1] <- 15260000; 
-    centromere[15,2] <- 18260000;
-    centromere[16,1] <- 35143302; 
-    centromere[16,2] <- 36943302;
-    centromere[17,1] <- 22187133;
-    centromere[17,2] <- 22287133;
-    centromere[18,1] <- 15400898; 
-    centromere[18,2] <- 16764896;
-    centromere[19,1] <- 26923622; 
-    centromere[19,2] <- 29923622;
-    centromere[20,1] <- 26267569; 
-    centromere[20,2] <- 28033230;
-    centromere[21,1] <- 10260000; 
-    centromere[21,2] <- 13260000;
-    centromere[22,1] <- 11330000; 
-    centromere[22,2] <- 14330000;
-    centromere[23,1] <- 58598737; 
-    centromere[23,2] <- 61598737;
-    centromere       <- apply(centromere, 1, mean);
-    return(centromere);
-}
 
-#.convertChromosomeToArm <- function(dataframe) {
-#    cat("Dividing chromosomes into arms:\n\n");
-#    centromere  <- CGHcall:::.getCentromere();
-#    arm         <- 1;
-#    output      <- c();
-#    previous    <- 1;
-#    a           <- 0;
-#    prevpos     <- dataframe[1,3];
-#    cat("New chromosome:\t\t", previous, "\t\tArm:\t", arm, "\n");
-#    temp <- dataframe[,2:3];
-#    for (i in 1:length(temp[[1]])) {
-#        if (temp[i,1] != previous) {
-#            arm <- arm + 1;
-#            cat("New chromosome:\t\t", temp[i,1], "\t\tArm:\t", arm, "\n");
-#        }
-#        else {
-#            if (prevpos < centromere[temp[i,1]] && temp[i,2] >= centromere[temp[i,1]]) {
-#                arm <- arm + 1;            
-#                cat("Centromere found:\t", centromere[temp[i,1]], "\tArm:\t", arm, "\n");
-#            }
-#        }
-#        output   <- c(output, arm);
-#        previous <- temp[i,1];
-#        prevpos  <- temp[i,2];
-#    }
-#    dataframe[,2] <- output;
-#    return(dataframe);    
-#}
-
-
-.convertChromosomeToArm <- function(dataframe) { #changed 22/06/2009; 
-    cat("Dividing chromosomes into arms:\n\n");
-    centromere  <- CGHcall:::.getCentromere();
-    chr <- dataframe[,2]
-    bp <- dataframe[,3]
-    chrlev <- unique(chr)
-    a<-1
-    chrarms <- c()
-    for(i in chrlev){
-    print(i)
-    chri <- which(chr==i)
-    bpi <- bp[chri]
-    wbpi <- length(which(bpi<=centromere[i]))
-    wbpil <- length(which(bpi>centromere[i]))
-    if(wbpi>0) {chrarms <- c(chrarms,rep(a,wbpi));a<-a+1}
-    if(wbpil>0) {chrarms <- c(chrarms,rep(a,wbpil));a<-a+1}  
-    }  
-    dataframe[,2] <- chrarms
-    return(dataframe)
-}
 
 .countcl <- function(k, regionsdat) {
     regionsdat[k,2]-regionsdat[k,1]+1
@@ -183,12 +268,14 @@
     }
 }
 
-.xgivenknotrunc <- function(k, class, pm, varprofall, allsum, allsumsq, allnc, robustsig) {
+.xgivenknotrunc <- function(k, class, pm, varprofall, allsum, allsumsq, allnc, robustsig, allcell,betas=c(1,0)) {
 
     sumx    <- allsum[k]
     sumxsq  <- allsumsq[k]
     ncl     <- allnc[k]
     v1      <- 2*varprofall[k]
+    sd1     <- sqrt(v1)
+    cell <- allcell[k]
 
     if (class==6) {
         mu <- (log2(2)/log2(1.5))*(0.10 + exp(-pm[4]))+0.3+exp(-pm[5])
@@ -204,14 +291,24 @@
         mu <- -0.10-exp(-pm[class])
     }
     
+    munorm <- -0.05+0.1*exp(-(pm[class])^2) 
+    #NEW
+    mu <- ((1-cell)*munorm + cell*mu)*(betas[1]+betas[2]*sd1)
+    
     v2 <- if(class == 4 | class == 2) 2*((pm[5+class])^2 + 0.0001) 
     else {if(class==3) {if(robustsig=="yes") 1/4*((pm[7])^2 + 0.0001)+1/4*((pm[9])^2 + 0.0001)+2*((pm[8]^2)+0.0001)
     else {2*((pm[8])^2 + 0.0001)}}
     else {if(class==1) 2*(pm[7]^2+(pm[6])^2 + 0.0001) 
     else {if(class==5) 2*((pm[10])^2+(pm[9])^2 + 0.0001)
     else 2*((pm[11])^2 + (pm[10])^2 + (pm[9])^2 + 0.0001)}}} # for stability
-
-
+    
+    v2norm <- if(robustsig=="yes") {1/4*((pm[7])^2 + 0.0001)+1/4*((pm[9])^2 + 0.0001)+2*((pm[8]^2)+0.0001)}
+    else {2*((pm[8])^2 + 0.0001)}
+    
+    #NEW
+    v2 <- if(class==3) v2norm else {(1-cell)^2*v2norm + cell^2*v2}
+    #v2 <- (1-cell)*v2norm + cell^2*v2
+    
     A       <- (sumx*v2+mu*v1)/(ncl*v2+v1)
     B       <- v1*v2/(ncl*v2+v1)
     C       <- sumxsq/v1 + mu^2/v2 - A^2/B
@@ -221,8 +318,8 @@
     return(logres)
 }
 
-.posteriorp <- function(k, priorp, pm, varprofall, allsum, allsumsq, allnc,robustsig) {
-   all3        <- sapply(c(1,2,3,4,5,6), CGHcall:::.xgivenknotrunc, k=k, pm=pm, varprofall=varprofall, allsum=allsum, allsumsq=allsumsq, allnc=allnc,robustsig=robustsig)
+.posteriorp <- function(k, priorp, pm, varprofall, allsum, allsumsq, allnc,robustsig,allcell) {
+   all3        <- sapply(c(1,2,3,4,5,6), .xgivenknotrunc, k=k, pm=pm, varprofall=varprofall, allsum=allsum, allsumsq=allsumsq, allnc=allnc,robustsig=robustsig,allcell=allcell)
     maxim       <- max(all3)
     all         <- exp(all3-maxim)
     allprior    <- all*priorp[k,]
@@ -230,19 +327,25 @@
     return(allprior/tot)
 }
 
-.reallikk4 <- function(k, alpha, pm, varprofall, allsum, allsumsq, allnc,robustsig) {
-    all3    <-sapply(c(1,2,3,4,5,6), CGHcall:::.xgivenknotrunc, k=k, pm=pm, varprofall=varprofall, allsum=allsum, allsumsq=allsumsq, allnc=allnc,robustsig=robustsig)
+.reallikk4 <- function(k, alpha, pm, varprofall, allsum, allsumsq, allnc,robustsig,allcell,betas=c(1,0)) {
+#betas=c(1,0);allcell=allcell_pr*0.2;k=1;pm=bstart; varprofall =varprof_allall_pr;allsum= allsumall_pr;allsumsq= allsumsqall_pr;allnc= allncall_pr;robustsig= robustsig;
+    all3    <-sapply(c(1,2,3,4,5,6), .xgivenknotrunc, k=k, pm=pm, varprofall=varprofall, allsum=allsum, allsumsq=allsumsq, 
+    allnc=allnc,robustsig=robustsig,allcell=allcell,betas=betas)
     maxim   <- max(all3)
     all     <- exp(all3-maxim)
     tot     <- maxim + log(all%*%alpha[k,])
     return(tot)
 }
 
-.reallik4 <- function(nreg, alpha, pm, varprofall, allsum, allsumsq, allnc,robustsig) {
-    return(sum(sapply(1:nreg, CGHcall:::.reallikk4, pm=pm, alpha=alpha, varprofall =varprofall, allsum=allsum, allsumsq=allsumsq, allnc=allnc,robustsig=robustsig)))
+.reallik4 <- function(nreg, alpha, pm, varprofall, allsum, allsumsq, allnc,robustsig,allcell,betas=c(1,0)) {
+    return(-sum(sapply(1:nreg, .reallikk4, pm=pm, alpha=alpha, varprofall =varprofall, allsum=allsum, allsumsq=allsumsq, allnc=allnc,robustsig=robustsig,allcell=allcell,betas=betas)))
 }
 
-.alphafun <- function(k, profile, priorp, pm, varprofall, allsum, allsumsq, allnc=allnc, robustsig, prior) {
+#.reallik4b <- function(nreg, alpha, pm, varprofall, allsum, allsumsq, allnc,robustsig,allcell,betas=c(1,0)) {
+#    return(-sapply(1:nreg, .reallikk4, pm=pm, alpha=alpha, varprofall =varprofall, allsum=allsum, allsumsq=allsumsq, allnc=allnc,robustsig=robustsig,allcell=allcell,betas=betas))
+#}
+
+.alphafun <- function(k, profile, priorp, pm, varprofall, allsum, allsumsq, allnc=allnc, robustsig, allcell, prior) {
     prof        <- profile[k]
     regionsk    <- which(profile==prof)
     nregk       <- length(regionsk)
@@ -250,14 +353,14 @@
         nregk       <- length(profile)
         regionsk    <- 1:nregk
     }
-    totpost     <- rep(1,nregk)%*%t(sapply(regionsk, CGHcall:::.posteriorp, priorp=priorp, pm=pm, varprofall=varprofall, allsum=allsum, allsumsq=allsumsq, allnc=allnc,robustsig=robustsig))
+    totpost     <- rep(1,nregk)%*%t(sapply(regionsk, .posteriorp, priorp=priorp, pm=pm, varprofall=varprofall, allsum=allsum, allsumsq=allsumsq, allnc=allnc,robustsig=robustsig,allcell=allcell))
     return(totpost/nregk)
 }
 
-.alpha0all <- function(nreg, profile, priorp, pm, varprofall, allsum, allsumsq, allnc, robustsig, prior) {
+.alpha0all <- function(nreg, profile, priorp, pm, varprofall, allsum, allsumsq, allnc, robustsig, allcell, prior) {
     prevprof    <- 0
     alphaall    <- c()
-    alpha1      <- CGHcall:::.alphafun(1, profile, priorp, pm, varprofall, allsum, allsumsq, allnc, robustsig, prior)
+    alpha1      <- .alphafun(1, profile, priorp, pm, varprofall, allsum, allsumsq, allnc, robustsig, allcell, prior)
     for (i in (1:nreg)) {
         if (prior != "all") {
             curprof <- profile[i]
@@ -265,7 +368,7 @@
                 newalpha <- oldalpha
             }
             if (curprof != prevprof) {
-                newalpha <- CGHcall:::.alphafun(i, profile, priorp, pm, varprofall, allsum, allsumsq, allnc, robustsig, prior)
+                newalpha <- .alphafun(i, profile, priorp, pm, varprofall, allsum, allsumsq, allnc, robustsig, allcell, prior)
             }
             oldalpha <- newalpha
             prevprof <- curprof
@@ -279,13 +382,18 @@
 }
 
 
-.minusEloglikreg <- function(k, posteriorprev, alphaprev, pm, varprofall, allsum, allsumsq, allnc, robustsig) {
-    all3 <- sapply(c(1,2,3,4,5,6), CGHcall:::.xgivenknotrunc, k=k, pm=pm, varprofall=varprofall, allsum=allsum, allsumsq=allsumsq, allnc,robustsig=robustsig)
+.minusEloglikreg <- function(k, posteriorprev, alphaprev, pm, varprofall, allsum, allsumsq, allnc, robustsig, allcell) {
+    all3 <- sapply(c(1,2,3,4,5,6), .xgivenknotrunc, k=k, pm=pm, varprofall=varprofall, allsum=allsum, allsumsq=allsumsq, allnc, robustsig=robustsig, allcell=allcell)
     return(-all3%*%posteriorprev[,k] - (log(alphaprev[k,])%*%posteriorprev[,k]))
 } 
   
-.totallik <- function(nreg, pm, posteriorprev, alphaprev, varprofall, allsum, allsumsq, allnc, robustsig) {
-    return(sum(sapply(1:nreg, CGHcall:::.minusEloglikreg, pm=pm, posteriorprev=posteriorprev, alphaprev=alphaprev, varprofall=varprofall, allsum=allsum, allsumsq=allsumsq, allnc,robustsig=robustsig)))
+.totallik <- function(nreg, pm, posteriorprev, alphaprev, varprofall, allsum, allsumsq, allnc, robustsig,allcell,ncpus=1) {
+    if(ncpus==1) {
+    return(sum(sapply(1:nreg, .minusEloglikreg, pm=pm, posteriorprev=posteriorprev, alphaprev=alphaprev, varprofall=varprofall, allsum=allsum, allsumsq=allsumsq, allnc,robustsig=robustsig,allcell=allcell)))
+    } else {
+    sfExport("pm")
+    return(sum(sfSapply(1:nreg, .minusEloglikreg, pm=pm, posteriorprev=posteriorprev, alphaprev=alphaprev, varprofall=varprofall, allsum=allsum, allsumsq=allsumsq, allnc,robustsig=robustsig,allcell=allcell)))
+    } 
 }
 
 #.mwp <- function(prof) {

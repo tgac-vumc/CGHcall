@@ -1,75 +1,53 @@
-make_cghRaw <- function(input) {
-    if (class(input) == "character") input  <- read.table(input, header=T, sep="\t", fill=T, quote="")
-    copynumber  <- as.matrix(input[,5:ncol(input)])
-    rownames(copynumber) <- input[,1]
-    annotation  <- data.frame(Chromosome=input[,2], Start=input[,3], End=input[,4], row.names=input[,1])
-    metadata    <- data.frame(labelDescription=c("Chromosomal position", "Basepair position start", "Basepair position end"), row.names=c("Chromosome", "Start", "End"))    
-    dimLabels   <- c("featureNames", "featureColumns")
-    annotation  <- new("AnnotatedDataFrame", data=annotation, dimLabels=dimLabels, varMetadata=metadata)   
-    result      <- new("cghRaw", copynumber=copynumber, featureData=annotation)
-}
-
-preprocess <- function(input, maxmiss=30, nchrom=23, ...) {
-    
-    ## Changes since previous version
-    ## - input is of class cghRaw
-
-    ## This function preprocesses your arrayCGH data:
-    ## - It throws out data with unknown positions
-    ## - It shrinks your data to nchrom chromosomes
-    ## - It removes rows with more than maxmiss % missing values
-    ## - It imputes missing values using knnimpute
-
-    ## Delete data with unknown position or chromosome number
-    
-    #input <- raw;maxmiss<-30;nchrom=23
-    input   <- input[!is.na(chromosomes(input)) & !is.na(bpstart(input))];
-    input   <- input[chromosomes(input) != 0 & bpstart(input) != 0,];
-    
-    ## Shrink to required number of chromosomes
-    input   <- input[chromosomes(input) <= nchrom,];
-    
-    ## Remove rows with too many missing values
+preprocess <- 
+function (input, maxmiss = 30, nchrom = 23, ...) 
+{
+    input <- input[!is.na(chromosomes(input)) & !is.na(bpstart(input))]
+    input <- input[chromosomes(input) != 0 & bpstart(input) != 
+        0, ]
+    input <- input[chromosomes(input) <= nchrom, ]
     countMissing <- function(x, maxMissing) {
-        if (length(x[is.na(x)]) <= maxMissing) return(TRUE);
-        return(FALSE);
+        if (length(x[is.na(x)]) <= maxMissing) 
+            return(TRUE)
+        return(FALSE)
     }
-    
-    
-    nummis <- length(copynumber(input)[is.na(copynumber(input))]) #added 24/11/2009; filter and impute only when necessary
-    if(nummis > 0) {
-         allowed     <- ncol(input) * maxmiss / 100;
-         filter      <- apply(copynumber(input), 1, countMissing, allowed);
-         input       <- input[filter,]
-   
-    ## Impute data using impute.knn from package 'impute'
-            if (!exists("k")) k <- 10
-            new.k       <- ceiling((1 - maxmiss / 100) * ncol(input))
-            new.k       <- min(new.k, k)
-            if (new.k != 10) cat("Changing impute.knn parameter k from", k, "to", new.k, "due to small sample size.\n")
-            if(new.k>1){    #Changed 15/5/09: impute only when at least 2 data columns; changed 24/11/09: do imputation in 100 batches    
-                nrows <- nrow(copynumber(input))
-                nrpi <- floor(nrows/100)
-                resultsall <- c()
-                for(i in 1:(100-1)){
-                datforimp <- copynumber(input)[((i-1)*nrpi+1):(nrpi*i),]
-                result      <- impute::impute.knn(datforimp, k=new.k);
-                resultsall <- rbind(resultsall,result$data)
-                }
-                datforimp <- copynumber(input)[((100-1)*nrpi+1):nrows,] #last one could be a little longer than nrpi
-                result      <- impute::impute.knn(datforimp, k=new.k);
-                resultsall <- rbind(resultsall,result$data)
-                copynumber(input) <- CGHcall:::.assignNames(resultsall, input)
-                
-               # result      <- impute::impute.knn(copynumber(input), k=new.k, ...);
-#                copynumber(input) <- CGHcall:::.assignNames(result$data, input)
+    nummis <- length(copynumber(input)[is.na(copynumber(input))])
+    if (nummis > 0) {
+        allowed <- ncol(input) * maxmiss/100
+        filter <- apply(copynumber(input), 1, countMissing, allowed)
+        input <- input[filter, ]
+    }
+    nummis <- length(copynumber(input)[is.na(copynumber(input))])
+    if (nummis > 0) {
+        if (!exists("k")) 
+            k <- 10
+        new.k <- ceiling((1 - maxmiss/100) * ncol(input))
+        new.k <- min(new.k, k)
+        if (new.k != 10) 
+            cat("Changing impute.knn parameter k from", k, "to", 
+                new.k, "due to small sample size.\n")
+        if (new.k > 1) {
+            nrows <- nrow(copynumber(input))
+            nrpi <- floor(nrows/100)
+            resultsall <- c()
+            for (i in 1:(100 - 1)) {
+                datforimp <- copynumber(input)[((i - 1) * nrpi + 
+                  1):(nrpi * i), ]
+                result <- impute::impute.knn(datforimp, k = new.k)
+                resultsall <- rbind(resultsall, result$data)
             }
-            
+            datforimp <- copynumber(input)[((100 - 1) * nrpi + 
+                1):nrows, ]
+            result <- impute::impute.knn(datforimp, k = new.k)
+            resultsall <- rbind(resultsall, result$data)
+            copynumber(input) <- CGHcall:::.assignNames(resultsall, 
+                input)
         }
-    input    
+    }
+    input
 }
 
-normalize <- function(input, method="median", cellularity=1, smoothOutliers=TRUE, ...) {
+
+normalize <- function(input, method="median", smoothOutliers=TRUE, ...) {
 
     ## Version 2.0
     ## Author: Sjoerd Vosse
@@ -105,29 +83,7 @@ normalize <- function(input, method="median", cellularity=1, smoothOutliers=TRUE
         copynumber(input) <- copynumber(input) - matrixValues;
     }
     
-    ### Adjusting for cellularity
-    adjustForCellularity <- function(matrix, cellularity) {
-        cat("Adjusting for cellularity ... \n");
-        result  <- c();
-        adjustCellularity <- function(value, cellularity) {
-            corrected   <- (2^value / cellularity - (1 - cellularity) / cellularity)
-            if (corrected < 2^(-5)) {
-                corrected <- 2^value;
-            }
-            new.value   <- log2(corrected)
-            return(new.value)
-        }
-        for (i in 1:ncol(matrix)) {
-            cat("Cellularity sample", i, ": ", cellularity[i], "\n");
-            if (cellularity[i] < 1) {
-                new.column  <- sapply(matrix[,i], adjustCellularity, cellularity[i]);
-                result      <- cbind(result, new.column);
-            } else {
-                result      <- cbind(result, matrix[,i]);
-            }
-        }
-        return(result);
-    }
+
     
     if (smoothOutliers) {
         cat("Smoothing outliers ... \n");
@@ -136,59 +92,37 @@ normalize <- function(input, method="median", cellularity=1, smoothOutliers=TRUE
             copynumber(input)[,i] <- CNA.object[[i+2]];
         }
     }
-    
-    if (length(cellularity) < ncol(input)) cellularity <- rep(cellularity, ncol(input));
-    if (length(cellularity) > ncol(input)) cellularity <- cellularity[1:ncol(input)];
-    
-    copynumber(input) <- CGHcall:::.assignNames(adjustForCellularity(copynumber(input), cellularity), input)
+      
+    #copynumber(input) <- CGHcall:::.assignNames(adjustForCellularity(copynumber(input), cellularity), input)
     
     input
     
 }
 
-segmentData <- function(input, method="DNAcopy", ...) {
-    #input <- seg[,1:5]
-    #input<-nor4950[,c(2,3,10)]
-    ## Version 2.0
-    ## Author: Sjoerd Vosse
-    ## Email: s.vosse@vumc.nl
-    ## Date: 24-10-2007
+#NEW: ALLOWS TWO SD.UNDO PARAMETERS, ONE FOR LONG AND ONE FOR SHORT SEGMENTS
 
-    ## This function is a simple wrapper that applies existing segmentation
-    ## algorithms (currently only DNAcopy) to your arrayCGH data.
-
-    ## Changes since previous version
-    ## - input is now cghRaw class
-    ## - output is cghSeg class
-    
+segmentData <- function (input, clen=10, relSDlong=3, method = "DNAcopy", ...) 
+{
     if (method == "DNAcopy") {
-    
-        CNA.object  <- DNAcopy::CNA(copynumber(input), chromosomes(input), bpstart(input), data.type="logratio")
-        #smooth.CNA.object <- DNAcopy::smooth.CNA(CNA.object)
+        CNA.object <- DNAcopy::CNA(copynumber(input), chromosomes(input), 
+            bpstart(input), data.type = "logratio")
         cat("Start data segmentation .. \n")
-        #segmented <- segment(CNA.object, nperm=1000)
-        segmented  <- DNAcopy::segment(CNA.object, ...)
-        
-        ## Convert DNAcopy result to CGHcall format
-        numclone    <- segmented$output$num.mark
-        smrat       <- segmented$output$seg
-        numsmrat    <- cbind(smrat, numclone)
-        repdata     <- function(row) {
+        #segmented <- DNAcopy::segment(CNA.object, ...)
+        segmented <- .segment2(CNA.object, clen, relSDlong, ...)
+        numclone <- segmented$output$num.mark
+        smrat <- segmented$output$seg
+        numsmrat <- cbind(smrat, numclone)
+        repdata <- function(row) {
             rep(row[1], row[2])
         }
-        makelist    <- apply(numsmrat, 1, repdata)
-        #joined      <- c()
-#        for (j in 1:length(makelist)) {
-#            joined  <- c(joined, makelist[[j]])
-#        }
-        joined      <- unlist(makelist) #changed 23/6/09, much faster
+        makelist <- apply(numsmrat, 1, repdata)
+        joined <- unlist(makelist)
         rm(makelist)
-        joined      <- matrix(joined, ncol=ncol(input), byrow=FALSE)
-        joined      <- CGHcall:::.assignNames(joined, input)
-        result      <- CGHcall:::.segFromRaw(input, joined)
+        joined <- matrix(joined, ncol = ncol(input), byrow = FALSE)
+        joined <- CGHcall:::.assignNames(joined, input)
+        result <- CGHcall:::.segFromRaw(input, joined)
     }
-    
-    result    
+    result
 }
 
 postsegnormalize <- function(segmentData,inter=c(-0.1,0.1)){
