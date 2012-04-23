@@ -5,7 +5,7 @@
   Expands result from \code{\link{CGHcall}} function to CGHcall object.
 }
 \usage{
-ExpandCGHcall(listcall,inputSegmented, digits=3, divide=4, memeff = FALSE, fileoutpre="Callobj_")
+ExpandCGHcall(listcall,inputSegmented, digits=3, divide=4, memeff = FALSE, fileoutpre="Callobj_",CellularityCorrectSeg=TRUE)
 }
 \arguments{
   \item{listcall}{List object; output of function \code{\link{CGHcall}}}
@@ -14,6 +14,7 @@ ExpandCGHcall(listcall,inputSegmented, digits=3, divide=4, memeff = FALSE, fileo
   \item{divide}{Number of batches to divide the work load in. Larger values saves memory, but requires more computing time}
   \item{memeff}{When set to TRUE, memory efficient mode is used: results are written in batches to multiple external files. If FALSE, one output object is provided.}
   \item{fileoutpre}{Only relevant when memeff=TRUE. Define prefix for output file names}
+  \item{CellularityCorrectSeg}{If TRUE, corrects segmented and normalized values for cellularity as well}
 }
 \details{This function is new in version 2.7.0. It allows more memory efficient handling of large data objects. If R crashes because of memory problem, we advise 
 to set memeff = TRUE and increase the value of divide.  When multiple files are output (in case of memeff=TRUE) the function combine may be used to combine CGHcall objects.
@@ -36,13 +37,13 @@ to set memeff = TRUE and increase the value of divide.  When multiple files are 
   raw.data <- preprocess(cgh)
   ## Simple global median normalization for samples with 75\% tumor cells
   perc.tumor <- rep(0.75, 3)
-  normalized.data <- normalize(raw.data, cellularity=perc.tumor)
+  normalized.data <- normalize(raw.data)
   ## Segmentation with slightly relaxed significance level to accept change-points.
   ## Note that segmentation can take a long time.
   \dontrun{segmented.data <- segmentData(normalized.data, alpha=0.02)}
   \dontrun{postsegnormalized.data <- postsegnormalize(segmented.data)}
   ## Call aberrations
-  \dontrun{result <- CGHcall(postsegnormalized.data)}
+  \dontrun{result <- CGHcall(postsegnormalized.data, cellularity=perc.tumor)}
   \dontrun{result <- ExpandCGHcall(result,postsegnormalized.data)}
 }
 \keyword{ misc }

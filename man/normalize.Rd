@@ -5,12 +5,11 @@
   This function normalizes arrayCGH data using the global mode or median. It can also adjust for the cellularity of your data.
 }
 \usage{
-normalize(input, method = "median", cellularity = 1, smoothOutliers = TRUE, ...)
+normalize(input, method = "median", smoothOutliers = TRUE, ...)
 }
 \arguments{
   \item{input}{Object of class \code{\link[CGHbase:class.cghRaw]{cghRaw}}. }
-  \item{method}{Normalization method, either 'median', 'mode', or 'none'. }
-  \item{cellularity}{ A vector of cellularities ranging from 0 to 1 to define the contamination of your sample with healthy cells (1 = no contamination). See details for more information. }
+  \item{method}{Normalization method, either \code{median}, \code{mode}, or \code{none}. }
   \item{smoothOutliers}{Logical. Indicates whether outliers should be smoothed using the \code{\link[DNAcopy]{smooth.CNA}} function.}
   \item{\dots}{Arguments for \code{\link[DNAcopy]{smooth.CNA}}. }
 }
@@ -22,13 +21,12 @@ normalize(input, method = "median", cellularity = 1, smoothOutliers = TRUE, ...)
 }
 \author{ Sjoerd Vosse & Mark van de Wiel }
 \examples{
-  data(WiltingData)
+  data(Wilting)
   ## Convert to 'cghRaw' object
-  cgh <- cghRaw(WiltingData)
+  cgh <- make_cghRaw(Wilting)
   ## First preprocess the data
   raw.data <- preprocess(cgh)
   ## Simple global median normalization for samples with 75\% tumor cells
-  perc.tumor <- rep(0.75, 3)
-  normalized.data <- normalize(raw.data, cellularity=perc.tumor)
+  normalized.data <- normalize(raw.data)
 }
 \keyword{ misc }

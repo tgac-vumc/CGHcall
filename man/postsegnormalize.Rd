@@ -29,8 +29,7 @@ postsegnormalize(segmentData, inter=c(-0.1,0.1))
   ## First preprocess the data
   raw.data <- preprocess(cgh)
   ## Simple global median normalization for samples with 75\% tumor cells
-  perc.tumor <- rep(0.75, 3)
-  normalized.data <- normalize(raw.data, cellularity=perc.tumor)  
+  normalized.data <- normalize(raw.data)  
   ## Segmentation with slightly relaxed significance level to accept change-points.
   ## Note that segmentation can take a long time.
   \dontrun{segmented.data <- segmentData(normalized.data, alpha=0.02)}
