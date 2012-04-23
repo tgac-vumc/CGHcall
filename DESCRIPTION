@@ -1,11 +1,11 @@
 Package:    CGHcall
 Type:       Package
 Title:      Calling aberrations for array CGH tumor profiles.
-Version: 2.17.0
-Date:       2011-10-10
-Author:     Sjoerd Vosse and Mark van de Wiel
+Version: 2.17.1
+Date:       2011-04-23
+Author:     Mark van de Wiel, Sjoerd Vosse
 Maintainer: Mark van de Wiel <mark.vdwiel@vumc.nl>
-Depends:    R (>= 2.0.0), impute(>= 1.8.0), DNAcopy (>= 1.6.0), methods, Biobase, CGHbase
+Depends:    R (>= 2.0.0), impute(>= 1.8.0), DNAcopy (>= 1.6.0), methods, Biobase, CGHbase, snowfall
 Description: Calls aberrations for array CGH data using a six state mixture model as well as several biological concepts that are ignored by existing algorithms. Visualization of profiles is also provided. 
 License:    GPL (http://www.gnu.org/copyleft/gpl.html)
 biocViews:  Microarray,Preprocessing,Visualization
