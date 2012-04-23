@@ -36,16 +36,21 @@ VU University Medical Center
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Overview}
 
-CGHcall allows users to make an objective and effective classification of their aCGH data into copy number states (loss, normal, gain or amplification). This document provides an overview on the usage of the CGHcall package. For more detailed information on the algorithm and assumptions we refer to the article \citep{CGHcall} and its supplementary material. As example data we attached the first five samples of the Wilting dataset \citep{Wilting}. After filtering and selecting only the autosomes 4709 datapoints remained.
+CGHcall allows users to make an objective and effective classification of their aCGH data into copy number 
+states (loss, normal, gain or amplification). This document provides an overview on the usage of the CGHcall package. 
+For more detailed information on the algorithm and assumptions we refer to the article \citep{CGHcall} and its 
+supplementary material. As example data we attached the first five samples of the Wilting dataset \citep{Wilting}. 
+After filtering and selecting only the autosomal 4709 datapoints remained.
 
 \section{Example}
 
-In this section we will use CGHcall to call and visualize the aberrations in the dataset described above. First, we load the package and the data:
+In this section we will use CGHcall to call and visualize the aberrations in the dataset described above. 
+First, we load the package and the data:
 
 <<echo=TRUE,print=FALSE>>=
 library(CGHcall)
-data(WiltingData)
-Wilting <- cghRaw(WiltingData)
+data(Wilting)
+Wilting <- make_cghRaw(Wilting)
 @
 
 \noindent
@@ -61,33 +66,49 @@ Next, we apply the {\tt preprocess} function which:
 cghdata <- preprocess(Wilting, maxmiss=30, nchrom=22)
 @
 
-To be able to compare profiles they need to be normalized. In this package we provide very basic global median or mode normalization. Of course, other methods can be used outside this package. This function also contains smoothing of outliers as implemented in the DNAcopy package \citep{DNAcopy}. Furthermore, when the proportion of tumor cells is not 100\% the ratios can be corrected. See the article and the supplementary material for more information on cellularity correction \citep{CGHcall}.
+To be able to compare profiles they need to be normalized. In this package we first provide very basic global median or 
+mode normalization. This function also contains smoothing 
+of outliers as implemented in the DNAcopy package \citep{DNAcopy}. Furthermore, when the proportion of tumor cells is 
+not 100\% the ratios can be corrected. See the article and the supplementary material for more information on 
+cellularity correction \citep{CGHcall}.
 
 <<echo=TRUE,print=FALSE>>=
-tumor.prop <- c(0.75, 0.9, 0.8, 1, 1)
-norm.cghdata <- normalize(cghdata, method="median", cellularity=tumor.prop, smoothOutliers=TRUE)
+
+norm.cghdata <- normalize(cghdata, method="median", smoothOutliers=TRUE)
 @
 
-The next step is segmentation of the data. This package only provides a simple wrapper function that applies the {\tt DNAcopy} algorithm \citep{DNAcopy}. Again, other segmentation algorithms may be used. To save time we will limit our analysis to the first two samples from here on.
+The next step is segmentation of the data. This package only provides a wrapper 
+function that applies the {\tt DNAcopy} algorithm \citep{DNAcopy}. It provides extra functionality
+by allowing to undo splits differently for long and short segments, respectively. In the example below
+short segments are smaller than clen=10 probes, and for such segments 
+undo.splits is effective when segments are less than undo.SD=3 (sd) apart. For long segments a less stringent criterion holds:
+undo when less than undo.SD/relSDlong = 3/5 (sd) apart. If, for two consecutive segements, one is short and one is long, 
+splits are undone in the same way as for two consecutive short segments.
+To save time we will limit our analysis to the first two samples from here on.
 
 <<echo=TRUE,print=FALSE>>=
 norm.cghdata <- norm.cghdata[,1:2]
-seg.cghdata <- segmentData(norm.cghdata, method="DNAcopy")
+seg.cghdata <- segmentData(norm.cghdata, method="DNAcopy",undo.splits="sdundo",undo.SD=3,
+clen=10, relSDlong=5)
 @
 
-Post-segmentation normalization allows to better set the zero level after segmentation
+Post-segmentation normalization allows to better set the zero level after segmentation. 
 
 <<echo=TRUE,print=FALSE>>=
 postseg.cghdata <- postsegnormalize(seg.cghdata)
 @
 
-Now that the data have been normalized and segments have been defined, we need to determine which segments should be classified as losses, normal, gains or amplifications.
+Now that the data have been normalized and segments have been defined, we need to determine which 
+segments should be classified as double losses, losses, normal, gains or amplifications. 
+Cellularity correction is now provided WITHIN the calling step (as opposed to some earlier of CGHcall) 
+
 
 <<echo=TRUE,print=FALSE>>=
-result <- CGHcall(postseg.cghdata)
+tumor.prop <- c(0.75, 0.9)
+result <- CGHcall(postseg.cghdata,nclass=5,cellularity=tumor.prop)
 @
 
-In CGHcall version >=2.9.0 the result of CGHcall needs to be converted to a call object. This can be a large object for large arrays. 
+The result of CGHcall needs to be converted to a call object. This can be a large object for large arrays. 
 
 <<echo=TRUE,print=FALSE>>=
 result <- ExpandCGHcall(result,postseg.cghdata)
@@ -117,6 +138,16 @@ Alternatively, we can create a summary plot of all the samples:
 \begin{center}
 <<fig=TRUE,echo=TRUE>>=
 summaryPlot(result)
+@
+\end{center}
+
+\pagebreak
+\noindent
+Or a frequency plot::
+
+\begin{center}
+<<fig=TRUE,echo=TRUE>>=
+frequencyPlotCalls(result)
 @
 \end{center}
 
