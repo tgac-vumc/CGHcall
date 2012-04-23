@@ -1,7 +1,7 @@
 exportPattern("^[^\\.]")
 import(impute)
 import(Biobase)
-inport(CGHbase)
+import(CGHbase)
 ### import(DNAcopy) # Doesn't work because DNAcopy doesn't have a namespace.
 
 exportClasses(cghRaw, cghSeg, cghCall)
