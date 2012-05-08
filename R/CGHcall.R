@@ -48,7 +48,7 @@ CGHcall <- function(inputSegmented, prior="auto", nclass=5, organism="human",cel
     ### Convert to chromosome arm if neccessary
     if (prior != "all" && organism == "human") {
        # temp            <- datareg[[1]];
-        dataprob    <- .convertChromosomeToArm(dataprob,build); 
+        dataprob    <- CGHbase:::.convertChromosomeToArm(dataprob,build); 
        # datareg[[1]]    <- .convertChromosomeToArm(temp);
         chr <- dataprob[,2] #BUG;repaired 22/06/09
     }
