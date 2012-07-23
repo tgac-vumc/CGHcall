@@ -1,4 +1,6 @@
 CGHcall <- function(inputSegmented, prior="auto", nclass=5, organism="human",cellularity=1, robustsig="yes",nsegfit=3000,maxnumseg=100,minlsforfit=0.5, build="GRCh37",ncpus=1) {
+    #library(CGHbase);library(CGHcall);load("C:\\VUData\\Oscar\\To_mark\\seg.CGHcall.Rdata");inputSegmented=seg; prior="auto"; nclass=5; organism="human";cellularity=1; robustsig="yes";nsegfit=3000;maxnumseg=100;minlsforfit=0.5; build="GRCh37";ncpus=2
+    
     timeStarted <- proc.time()
     #print("changed")
     gc() #memory usage in Mb
@@ -175,7 +177,7 @@ CGHcall <- function(inputSegmented, prior="auto", nclass=5, organism="human",cel
 
     mus         <- c(-0.10-exp(-bstart[2])-0.3 - exp(-bstart[1]), -0.10-exp(-bstart[2]), -0.05+0.1*exp(-(bstart[3])^2), 0.1 + exp(-bstart[4]), 2*(0.10 + exp(-bstart[4]))+0.3+exp(-bstart[5]))
     priorp      <- matrix(rep(c(0.01, 0.09, 0.8, 0.08, 0.01, 0.01), nreg), ncol=6, byrow=TRUE)
-    alpha0      <- .alpha0all(nreg, profchrom, priorp, bstart, varprofall, allsum, allsumsq, allnc,robustsig,allcell,prior)
+    alpha0      <- CGHcall:::.alpha0all(nreg, profchrom, priorp, bstart, varprofall, allsum, allsumsq, allnc,robustsig,allcell,prior)
     
     maxiter     <- 10
     stop        <- 0
@@ -195,8 +197,8 @@ CGHcall <- function(inputSegmented, prior="auto", nclass=5, organism="human",cel
     while (stop == 0 & iter <= maxiter) {
         print(gc())
         cat("Calling iteration", iter, ":\n")
-        posterior0  <- sapply(1:nreg, .posteriorp, priorp=alpha0, pm=bstart, varprofall=varprofall, allsum=allsum, allsumsq=allsumsq, allnc=allnc,allcell=allcell,robustsig=robustsig)
-        likprev     <- .totallik(bstart, nreg=nreg, posteriorprev=posterior0, alphaprev=alpha0, varprofall=varprofall, allsum=allsum, allsumsq=allsumsq, allnc=allnc,allcell=allcell,robustsig=robustsig)
+        posterior0  <- sapply(1:nreg, CGHcall:::.posteriorp, priorp=alpha0, pm=bstart, varprofall=varprofall, allsum=allsum, allsumsq=allsumsq, allnc=allnc,allcell=allcell,robustsig=robustsig)
+        likprev     <- CGHcall:::.totallik(bstart, nreg=nreg, posteriorprev=posterior0, alphaprev=alpha0, varprofall=varprofall, allsum=allsum, allsumsq=allsumsq, allnc=allnc,allcell=allcell,robustsig=robustsig)
         
 
         if(ncpus>1){
@@ -206,7 +208,7 @@ CGHcall <- function(inputSegmented, prior="auto", nclass=5, organism="human",cel
         }
         
         pmt<-proc.time()
-        optres      <- optim(bstart,.totallik, nreg=nreg, posteriorprev=posterior0, alphaprev=alpha0, varprofall=varprofall, allsum=allsum, allsumsq=allsumsq, allnc=allnc,allcell=allcell,robustsig=robustsig,ncpus=ncpus)
+        optres      <- optim(bstart,CGHcall:::.totallik, nreg=nreg, posteriorprev=posterior0, alphaprev=alpha0, varprofall=varprofall, allsum=allsum, allsumsq=allsumsq, allnc=allnc,allcell=allcell,robustsig=robustsig,ncpus=ncpus)
         toptim<-proc.time()-pmt
                
         if(ncpus>1){
@@ -216,8 +218,8 @@ CGHcall <- function(inputSegmented, prior="auto", nclass=5, organism="human",cel
         
         bprev       <- bstart
         bstart      <- optres$par       
-        alpha0      <- .alpha0all(nreg, profchrom, alpha0, bstart, varprofall, allsum, allsumsq, allnc, robustsig,allcell, prior)
-        rl          <- .reallik4(nreg, alpha0, bstart, varprofall, allsum, allsumsq, allnc, robustsig,allcell)
+        alpha0      <- CGHcall:::.alpha0all(nreg, profchrom, alpha0, bstart, varprofall, allsum, allsumsq, allnc, robustsig,allcell, prior)
+        rl          <- CGHcall:::.reallik4(nreg, alpha0, bstart, varprofall, allsum, allsumsq, allnc, robustsig,allcell)
        
         llmin       <- optres$value
         musprev     <- c(-0.10-exp(-bprev[2])-0.3 - exp(-bprev[1]), -0.10-exp(-bprev[2]), -0.05+0.1*exp(-(bprev[3])^2), 0.1 + exp(-bprev[4]),(log2(2)/log2(1.5))*(0.1 + exp(-bprev[4])), (log2(2)/log2(1.5))*(0.10 + exp(-bprev[4]))+0.3+exp(-bprev[5]))
@@ -268,19 +270,19 @@ CGHcall <- function(inputSegmented, prior="auto", nclass=5, organism="human",cel
     chrarm_alpha0uni <- unique(chrarm_alpha0) 
     chrarmregall   <- as.vector(apply(as.matrix(regionsall), 1, takechr, chrom=chr))
     alpha0_all      <- t(sapply(chrarmregall,function(x){chrarm_alpha0uni[chrarm_alpha0uni[,1]==x,-1]})) 
-    alpha0_all     <- .alpha0all(nregall, profchromall, alpha0_all, bstart, varprof_allall, allsumall, allsumsqall, allncall, robustsig,allcellall, prior)
+    alpha0_all     <- CGHcall:::.alpha0all(nregall, profchromall, alpha0_all, bstart, varprof_allall, allsumall, allsumsqall, allncall, robustsig,allcellall, prior)
     } else alpha0_all <- matrix(rep(alpha0[1,],nregall),byrow=T,nrow=nregall)
 
     
-    posteriorfin    <- t(sapply(1:nregall, .posteriorp, priorp=alpha0_all, pm=best, varprofall=varprof_allall, allsum=allsumall, allsumsq=allsumsqall, allnc=allncall, allcell=allcellall, robustsig=robustsig))
+    posteriorfin    <- t(sapply(1:nregall, CGHcall:::.posteriorp, priorp=alpha0_all, pm=best, varprofall=varprof_allall, allsum=allsumall, allsumsq=allsumsqall, allnc=allncall, allcell=allcellall, robustsig=robustsig))
     
     overrule <- function(id,mnall){
-    #id <- 393;mnall<-allmeanall
+    #id <- 17;mnall<-allmeanall
     toret <- posteriorfin[id,]   
     mn <- mnall[id]
     row1 <- toret
     if((mn > mug+sdg) & (which.max(row1)<=3)) {
-        sumr <- sum(row1[4],row1[5],row1[6]); #added 17/12/10; if max prob belongs to non-gain state, overrule; redistribute probability
+        sumr <- sum(c(row1[4],row1[5],row1[6])); #added 17/12/10; if max prob belongs to non-gain state, overrule; redistribute probability
         if(sumr > 10^(-10)) toret<- c(0,0,0,row1[4]/sumr,row1[5]/sumr,row1[6]/sumr) else {
             toret<- c(0,0,0,0,0,0)
             wm<-which.min(c(abs(mn-mug),abs(mn-mudg),abs(mn-mua)))+3
@@ -288,7 +290,7 @@ CGHcall <- function(inputSegmented, prior="auto", nclass=5, organism="human",cel
         }
     }
     if((mn < mul-sdl) & (which.max(row1)>=3)) {
-        sumr <- sum(row1[1],row1[2]); #added 17/12/10; if max prob belongs to non-loss state, overrule
+        sumr <- sum(c(row1[1],row1[2])); #added 17/12/10; if max prob belongs to non-loss state, overrule
          if(sumr > 10^(-10)) toret<- c(row1[1]/sumr,row1[2]/sumr,0,0,0,0) else {
             toret<- c(0,0,0,0,0,0)
             wm<-which.min(c(abs(mn-mudl),abs(mn-mul)))
@@ -297,13 +299,13 @@ CGHcall <- function(inputSegmented, prior="auto", nclass=5, organism="human",cel
     }
     
      if(mn < 0) {
-        sumr <- sum(toret[1],toret[2],toret[3]); #added 20/04/12; 
+        sumr <- sum(c(toret[1],toret[2],toret[3])); #added 20/04/12; 
         toret<- c(toret[1]/sumr,toret[2]/sumr,toret[3]/sumr,0,0,0) 
     }
     
     if(mn >= 0) {
-        sumr <- sum(toret[3],toret[4],toret[6],toret[6]); #added 20/04/12; 
-        toret<- c(0,0,toret[3],toret[4],toret[6],toret[6])/sumr 
+        sumr <- sum(c(toret[3],toret[4],toret[5],toret[6])); #added 20/04/12; 
+        toret<- c(0,0,toret[3],toret[4],toret[5],toret[6])/sumr 
     }
     return(toret)
     }
@@ -418,7 +420,7 @@ adjustForCellularity <- function(matrix, cellularity,pmode) {
         prob.gain.ind   <- dataprob[,(nclass*(i-1)+3+inc)]
         if (nclass>=4) {
             prob.amp.ind    <- dataprob[,(nclass*(i-1)+4+inc)]
-            ticksamp        <- which(prob.amp.ind >= 0.5)
+            ticksamp        <- which(prob.amp.ind > 0.5)
             lt              <- length(ticksamp)
         }        
         
@@ -464,7 +466,7 @@ adjustForCellularity <- function(matrix, cellularity,pmode) {
     if (nclass == 5) {assayData <-assayDataNew(copynumber=copynumber(IS),segmented=segmented(IS),calls=calls,probdloss=probdloss, probloss=probloss,probnorm=probnorm,probgain=probgain,probamp=probamp)} 
     if (nclass == 4) {assayData <-assayDataNew(copynumber=copynumber(IS),segmented=segmented(IS),calls=calls,probloss=probloss,probnorm=probnorm,probgain=probgain,probamp=probamp)} 
     if (nclass == 3) {assayData <-assayDataNew(copynumber=copynumber(IS),segmented=segmented(IS),calls=calls,probloss=probloss,probnorm=probnorm,probgain=probgain) }
-    rm(probloss,probnorm,probgain); if(nclass>=4) rm(probamp);if(nclass==4) rm(probdloss)
+    rm(probloss,probnorm,probgain); if(nclass>=4) rm(probamp);if(nclass==5) rm(probdloss)
     print(gc())
    
     result0  <- CGHcall:::.callFromSeg(IS, assayData)  
