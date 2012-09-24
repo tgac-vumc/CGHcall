@@ -16,7 +16,7 @@ segmentData(input, clen=10, relSDlong=3, method = "DNAcopy", ...)
 }
 \details{
 	See \code{\link[DNAcopy]{segment}} for details on the algorithm. About \code{clen} and \code{relSDlong}: 
-these are only relevant when \link[DNAcopy] option \code{undo.splits}=\code{sdundo} is set, in combination with \link[DNAcopy] option \code{undo.SD}. 
+these are only relevant when \code{\link[DNAcopy]{segment}} option \code{undo.splits}=\code{sdundo} is set, in combination with \code{\link[DNAcopy]{segment}} option \code{undo.SD}. 
 \code{relSDlong} provides the undo sd for long segments, which equals \code{undo.SD/relSDlong}. \code{undo.SD} is then used for short segments. 
 In the example below, short segments are considered to contain 
 less or equal to \code{clen}=10 features. The example below undoes splits for two consecutive short segments if these are less than \code{undo.SD}=3 sd apart, 

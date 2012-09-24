@@ -18,7 +18,8 @@ CGHcall(inputSegmented, prior = "auto", nclass = 5, organism = "human", cellular
   \item{maxnumseg}{Maximum number of segments per profile used for fitting the model}
   \item{minlsforfit}{Minimum length of the segment (in Mb) to be used for fitting the model}
   \item{build}{Build of Humane Genome. Either \code{GRCh37}, \code{GRCh36}, \code{GRCh35} or \code{GRCh34}.}
-  \item{ncpus}{Number of cpus used for parallel calling. Has a large effect on computing time. ncpus larger than 1 requires package \link[snowfall].}
+  \item{ncpus}{Number of cpus used for parallel calling. Has a large effect on computing time. 
+  \code{ncpus} larger than 1 requires package \code{snowfall}.}
 }
 \details{
     Please read the article and the supplementary information for detailed information on the algorithm. 

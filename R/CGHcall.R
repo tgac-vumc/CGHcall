@@ -1,5 +1,5 @@
 CGHcall <- function(inputSegmented, prior="auto", nclass=5, organism="human",cellularity=1, robustsig="yes",nsegfit=3000,maxnumseg=100,minlsforfit=0.5, build="GRCh37",ncpus=1) {
-    #library(CGHbase);library(CGHcall);load("C:\\VUData\\Oscar\\To_mark\\seg.CGHcall.Rdata");inputSegmented=seg; prior="auto"; nclass=5; organism="human";cellularity=1; robustsig="yes";nsegfit=3000;maxnumseg=100;minlsforfit=0.5; build="GRCh37";ncpus=2
+    #library(CGHbase);library(CGHcall);load("C:\\VUData\\Ilari\\psn.RData");inputSegmented=cgh.psn; prior="auto"; nclass=5; organism="human";cellularity=1; robustsig="yes";nsegfit=3000;maxnumseg=100;minlsforfit=0.5; build="GRCh37";ncpus=2
     
     timeStarted <- proc.time()
     #print("changed")
@@ -31,7 +31,7 @@ CGHcall <- function(inputSegmented, prior="auto", nclass=5, organism="human",cel
     rm(whna,inputSegmented);gc()
     nc    <- ncol(datmat)/2 
     nclone <-nrow(datmat)
-    datareg  <- .MakeData(datmat[,-(1:nc),drop=FALSE],chr)  
+    datareg  <- CGHcall:::.MakeData(datmat[,-(1:nc),drop=FALSE],chr)  
    
     #rm(combined); 
     
@@ -269,10 +269,17 @@ CGHcall <- function(inputSegmented, prior="auto", nclass=5, organism="human",cel
     chrarm_alpha0 <- cbind(chrarmreg,alpha0)
     chrarm_alpha0uni <- unique(chrarm_alpha0) 
     chrarmregall   <- as.vector(apply(as.matrix(regionsall), 1, takechr, chrom=chr))
+    chrarmreguni <- unique(chrarmreg)
+    chrarmreguniall <- unique(chrarmregall)
+    differ <- setdiff(chrarmreguniall,chrarmreguni)
+    if(length(differ)==0){
     alpha0_all      <- t(sapply(chrarmregall,function(x){chrarm_alpha0uni[chrarm_alpha0uni[,1]==x,-1]})) 
+    } else {
+    mn <- as.vector(apply(chrarm_alpha0uni[,-1],2,mean))
+    alpha0_all      <- t(sapply(chrarmregall,function(x){if(!is.element(x,differ)) chrarm_alpha0uni[chrarm_alpha0uni[,1]==x,-1] else mn}))
+    } 
     alpha0_all     <- CGHcall:::.alpha0all(nregall, profchromall, alpha0_all, bstart, varprof_allall, allsumall, allsumsqall, allncall, robustsig,allcellall, prior)
     } else alpha0_all <- matrix(rep(alpha0[1,],nregall),byrow=T,nrow=nregall)
-
     
     posteriorfin    <- t(sapply(1:nregall, CGHcall:::.posteriorp, priorp=alpha0_all, pm=best, varprofall=varprof_allall, allsum=allsumall, allsumsq=allsumsqall, allnc=allncall, allcell=allcellall, robustsig=robustsig))
     
