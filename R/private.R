@@ -69,7 +69,7 @@
         sample.segmeans <- NULL
         for (ic in uchrom) {
             if (verbose >= 2) 
-                cat(paste("  current chromosome:", ic, "\n"))
+                message(paste("  current chromosome:", ic, "\n"))
             segci <- .changepoints2(genomdati[chromi == ic], data.type, 
                 alpha, sbdry, sbn, nperm, p.method, min.width, 
                 kmax, nmin, trimmed.SD, undo.splits, undo.prune, 
@@ -105,14 +105,14 @@
 {
     n <- length(genomdat)
     if (missing(trimmed.SD)) 
-        trimmed.SD <- mad(diff(genomdat))/sqrt(2)
+        trimmed.SD <- mad(diff(genomdat),na.rm=TRUE)/sqrt(2)
     seg.end <- c(0, n)
     k <- length(seg.end)
     change.loc <- NULL
     while (k > 1) {
         current.n <- seg.end[k] - seg.end[k - 1]
         if (verbose >= 3) 
-            cat(".... current segment:", seg.end[k - 1] + 1, 
+            message(".... current segment:", seg.end[k - 1] + 1, 
                 "-", seg.end[k], "\n")
         if (current.n >= 2 * min.width) {
             current.genomdat <- genomdat[(seg.end[k - 1] + 1):seg.end[k]]
@@ -146,7 +146,7 @@
             1)], seg.end[k - 1] + zzz$icpt, seg.end[k]))
         k <- length(seg.end)
         if (verbose >= 3) 
-            cat(".... segments to go:", seg.end, "\n")
+            message(".... segments to go:", seg.end, "\n")
     }
     seg.ends <- rev(change.loc)
     nseg <- length(seg.ends)

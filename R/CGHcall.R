@@ -55,7 +55,7 @@ CGHcall <- function(inputSegmented, prior="auto", nclass=5, organism="human",cel
         chr <- dataprob[,2] #BUG;repaired 22/06/09
     }
 
-    cat("EM algorithm started ... \n");
+    message("EM algorithm started ... \n");
     
     dat         <- c()
     datsm       <- c()
@@ -159,12 +159,12 @@ CGHcall <- function(inputSegmented, prior="auto", nclass=5, organism="human",cel
     allmeanl    <- allmean[allmean < -0.15 & allmean > -0.7]
     allmeang    <- allmean[allmean>0.15 & allmean<0.7]
     allmean0    <- allmean[abs(allmean) <= 0.15]
-    sdlst       <- if(length(allmeanl) <= 1) 0.01 else mad(allmeanl)
-    meanlst     <- if(length(allmeanl) <= 0) -0.3 else mean(allmeanl)
-    sdgst       <- if(length(allmeang) <= 1) 0.01 else mad(allmeang)
-    meangst     <- if(length(allmeang) <= 0) 0.3 else mean(allmeang)
-    sd0st       <- if(length(allmean0) <= 1) 0.01 else mad(allmean0)
-    #sd0st       <- if(length(allmean0) <= 1) 0.01 else sd(allmean0)
+    sdlst       <- if(length(allmeanl) <= 1) 0.01 else mad(allmeanl,na.rm=TRUE)
+    meanlst     <- if(length(allmeanl) <= 0) -0.3 else mean(allmeanl,na.rm=TRUE)
+    sdgst       <- if(length(allmeang) <= 1) 0.01 else mad(allmeang,na.rm=TRUE)
+    meangst     <- if(length(allmeang) <= 0) 0.3 else mean(allmeang,na.rm=TRUE)
+    sd0st       <- if(length(allmean0) <= 1) 0.01 else mad(allmean0,na.rm=TRUE)
+    #sd0st       <- if(length(allmean0) <= 1) 0.01 else sd(allmean0,na.rm=TRUE)
 
     profchrom   <- chrarmreg
     if(robustsig=="no") {
@@ -188,15 +188,15 @@ CGHcall <- function(inputSegmented, prior="auto", nclass=5, organism="human",cel
     if(ncpus>1){
             trysnow <- try(library(snowfall))  
             if(class(trysnow)=="try-error") {
-            print("You should install 'snowfall' if you want to use parallel computing...")
-            print("Escaping to slower computation on 1 cpu")
+            message("You should install 'snowfall' if you want to use parallel computing...")
+            message("Escaping to slower computation on 1 cpu")
             ncpus <- 1
             }
         }
         
     while (stop == 0 & iter <= maxiter) {
-        print(gc())
-        cat("Calling iteration", iter, ":\n")
+        message(gc())
+        message("Calling iteration", iter, ":\n")
         posterior0  <- sapply(1:nreg, CGHcall:::.posteriorp, priorp=alpha0, pm=bstart, varprofall=varprofall, allsum=allsum, allsumsq=allsumsq, allnc=allnc,allcell=allcell,robustsig=robustsig)
         likprev     <- CGHcall:::.totallik(bstart, nreg=nreg, posteriorprev=posterior0, alphaprev=alpha0, varprofall=varprofall, allsum=allsum, allsumsq=allsumsq, allnc=allnc,allcell=allcell,robustsig=robustsig)
         
@@ -227,17 +227,17 @@ CGHcall <- function(inputSegmented, prior="auto", nclass=5, organism="human",cel
         param       <- c(mus, bstart[6], bstart[7], bstart[8], bstart[9], bstart[10],bstart[11])
         paramprev   <- c(musprev, bprev[6], bprev[7], bprev[8], bprev[9], bprev[10],bprev[11])
         
-        print("optim results")
-        print(paste("time:",round(toptim[3])))
-        print(paste("minimum:",optres$value))
+        message("optim results")
+        message(paste("time:",round(toptim[3])))
+        message(paste("minimum:",optres$value))
         if(robustsig=="no") {
             printmat <- matrix(c(j,rl,mus,sqrt(bstart[7]^2+(bstart[6])^2 + 0.0001),bstart[7],bstart[8],bstart[9],sqrt((bstart[10])^2+(bstart[9])^2 + 0.0001),sqrt((bstart[11])^2 + (bstart[10])^2+ (bstart[9])^2+ 0.0001)),nrow=1)
             colnames(printmat) <- c("j","rl","mudl","musl","mun","mug","mudg","mua","sddl","sdsl","sdn","sdg","sddg","sda")
-            print(printmat)
+            message(printmat)
         } else {
             printmat<-matrix(c(j,rl,mus,sqrt(bstart[7]^2+(bstart[6])^2 + 0.0001),bstart[7],sqrt(1/8*((bstart[7])^2 + 0.0001)+1/8*((bstart[9])^2 + 0.0001)+((bstart[8]^2)+0.0001)),bstart[9],sqrt((bstart[10])^2+(bstart[9])^2 + 0.0001),sqrt((bstart[11])^2 + (bstart[10])^2 + (bstart[9])^2 + 0.0001)),nrow=1)  #robust option
             colnames(printmat) <- c("j","rl","mudl","musl","mun","mug","mudg","mua","sddl","sdsl","sdn","sdg","sddg","sda")
-            print(printmat)
+            message(printmat)
         }
         
         
@@ -245,11 +245,11 @@ CGHcall <- function(inputSegmented, prior="auto", nclass=5, organism="human",cel
         iter <- iter+1
         }
         mudl<-printmat[3];mul <- printmat[4];mug<-printmat[6];mudg<- printmat[7];mua<-printmat[8];sdl<-printmat[10];sdg<-printmat[12] #added 17/12
-        cat("EM algorithm done ...\n")
+        message("EM algorithm done ...\n")
         best            <- bstart
     
     #now start computing posteriors for ALL data
-    cat("Computing posterior probabilities for all segments ...\n")
+    message("Computing posterior probabilities for all segments ...\n")
     #nregall        <- nrow(regionsdatall)
     allncall       <- sapply(1:nregall, CGHcall:::.countcl, regionsdat=regionsdatall)
     allsumall      <- sapply(1:nregall, CGHcall:::.sumreg, dat=datall, regionsdat=regionsdatall)
@@ -340,7 +340,7 @@ CGHcall <- function(inputSegmented, prior="auto", nclass=5, organism="human",cel
     #save(listcall,file="listcall.Rdata")
     gc()
     timeFinished <- round((proc.time() - timeStarted)[1] / 60)
-    cat("Total time:", timeFinished, "minutes\n")
+    message("Total time:", timeFinished, "minutes\n")
     return(listcall)
     }
     
@@ -352,7 +352,7 @@ ExpandCGHcall <- function(listcall,inputSegmented, digits=3,divide=4, memeff = F
   cellularity <- listcall[[7]]
   
 adjustForCellularity <- function(matrix, cellularity,pmode) {
-        if(pmode=="seg") cat("Adjusting segmented data for cellularity ... \n") else cat("Adjusting normalized data for cellularity ... \n")
+        if(pmode=="seg") message("Adjusting segmented data for cellularity ... \n") else message("Adjusting normalized data for cellularity ... \n")
         result  <- c();
         adjustCellularity <- function(value, cellularity) {
             corrected   <- (2^value / cellularity - (1 - cellularity) / cellularity)
@@ -363,7 +363,7 @@ adjustForCellularity <- function(matrix, cellularity,pmode) {
             return(new.value)
         }
         for (i in 1:ncol(matrix)) {
-            cat("Cellularity sample", i, ": ", cellularity[i], "\n");
+            message("Cellularity sample", i, ": ", cellularity[i], "\n");
             if (cellularity[i] < 1) {
                 new.column  <- sapply(matrix[,i], adjustCellularity, cellularity[i]);
                 result      <- cbind(result, new.column);
@@ -387,12 +387,12 @@ adjustForCellularity <- function(matrix, cellularity,pmode) {
   
   for(part in 1:divide){
   #part <- 1
-    print(part)
+    message(part)
     if (part < divide) whprof <- ((part-1)*nperturn+1):(part*nperturn) else whprof <- ((part-1)*nperturn+1):nctot
     IS <- inputSegmented[,whprof]
     nc <- length(whprof)
     dataprob<-array(0,c(nclone,nclass*nc))
-    print(gc())
+    message(gc())
      for (k in 1:nc) {
         post        <- (posteriorfin2[posteriorfin2[,1]==whprof[k],])[,-1]
         regionsk    <- (regionsprof[regionsprof[,1]==whprof[k],])[,-1]
@@ -407,9 +407,9 @@ adjustForCellularity <- function(matrix, cellularity,pmode) {
         allprobs    <- matrix(probs, ncol=nclass, byrow=TRUE)
       #  datk        <- datareg[[1]][,k]
         dataprob[,(nclass*(k-1)+1):(nclass*k)] <- allprobs
-        rm(probs,post,regionsk,togeth);print(gc())
+        rm(probs,post,regionsk,togeth);message(gc())
     }
-    print(gc())
+    message(gc())
    
     #ncolscl     <- ncol(normalizedData) #25/11/09 moved upward for efficiency reasons
     classify.res        <- array(NA,c(nclone,nc))
@@ -447,34 +447,34 @@ adjustForCellularity <- function(matrix, cellularity,pmode) {
    (as.numeric(prob.dl.ind>0.5)+1)*(as.numeric(prob.amp.ind>0.5)+1)*(2*(as.numeric(prob.gain.amp>prob.l1.l2))-1)*(as.numeric(apply(cbind(prob.l1.l2,prob.gain.amp),1,max)>prob.none.ind))
         }            
     }
-    print(gc())
+    message(gc())
     ncolprob <- ncol(dataprob)
     neworder<-as.vector(sapply(1:nclass,function(x)seq(x,ncolprob,by=nclass)))
     dataprob   <- dataprob[,neworder]
     calls       <- CGHcall:::.assignNames(classify.res, IS)
-    rm(classify.res);print(gc());
+    rm(classify.res);message(gc());
     if(nclass==5){
     probdloss <- CGHcall:::.assignNames(dataprob[,1:nc,drop=FALSE], IS)
     dataprob <- dataprob[,-(1:nc),drop=FALSE]
-    print(gc())
+    message(gc())
     }
     
     probloss <- CGHcall:::.assignNames(dataprob[,1:nc,drop=FALSE], IS)
     dataprob <- dataprob[,-(1:nc),drop=FALSE]
-    print(gc())
+    message(gc())
     probnorm <- CGHcall:::.assignNames(dataprob[,1:nc,drop=FALSE], IS)
     dataprob <- dataprob[,-(1:nc),drop=FALSE]
-    print(gc())
+    message(gc())
     probgain <- CGHcall:::.assignNames(dataprob[,1:nc,drop=FALSE], IS)
     dataprob <- dataprob[,-(1:nc),drop=FALSE]
-    print(gc())
+    message(gc())
     if(nclass>=4) probamp <- CGHcall:::.assignNames(dataprob[,1:nc,drop=FALSE], IS)
-    rm(dataprob);print(gc())
+    rm(dataprob);message(gc())
     if (nclass == 5) {assayData <-assayDataNew(copynumber=copynumber(IS),segmented=segmented(IS),calls=calls,probdloss=probdloss, probloss=probloss,probnorm=probnorm,probgain=probgain,probamp=probamp)} 
     if (nclass == 4) {assayData <-assayDataNew(copynumber=copynumber(IS),segmented=segmented(IS),calls=calls,probloss=probloss,probnorm=probnorm,probgain=probgain,probamp=probamp)} 
     if (nclass == 3) {assayData <-assayDataNew(copynumber=copynumber(IS),segmented=segmented(IS),calls=calls,probloss=probloss,probnorm=probnorm,probgain=probgain) }
     rm(probloss,probnorm,probgain); if(nclass>=4) rm(probamp);if(nclass==5) rm(probdloss)
-    print(gc())
+    message(gc())
    
     result0  <- CGHcall:::.callFromSeg(IS, assayData)  
     
@@ -494,11 +494,11 @@ adjustForCellularity <- function(matrix, cellularity,pmode) {
         fileout <- paste(fileoutpre,"profiles",whprof[1],"to",whprof[length(whprof)],".Rdata",sep="")  
         save(result0,file=fileout)
     }
-    rm(assayData,result0);print(gc())
+    rm(assayData,result0);message(gc())
     }
     
-    cat("FINISHED!\n")
+    message("FINISHED!\n")
     timeFinished <- round((proc.time() - timeStarted)[1] / 60)
-    cat("Total time:", timeFinished, "minutes\n")
-    if (memeff) print("Results printed to separate files") else return(result)
+    message("Total time:", timeFinished, "minutes\n")
+    if (memeff) message("Results printed to separate files") else return(result)
 }
